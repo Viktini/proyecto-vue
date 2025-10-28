@@ -36,7 +36,7 @@
               <router-link v-if="isCliente" to="/comprar-paquete" class="btn btn-primary">
                 Comprar Paquete
               </router-link>
-              <button v-else class="btn btn-secondary" disabled>
+              <button v-else class="btn btn-secondary" @click="redirigirALogin">
                 Inicia sesión como cliente para comprar
               </button>
             </div>
@@ -70,11 +70,13 @@
 <script>
 import { computed } from 'vue'
 import { useAppStore } from '@/stores'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'Paquetes',
   setup() {
-    const store = useStore()
+    const store = useAppStore()
+    const router = useRouter()
 
     const paquetes = computed(() => store.paquetes) // ← Acceso directo
     const tratamientos = computed(() => store.tratamientos)
@@ -108,12 +110,19 @@ export default {
       return precioIndividual - paquete.precio
     }
 
+    const redirigirALogin = () => {
+      // Cerrar sesión actual y redirigir al login
+      store.logout()
+      router.push('/login')
+    }
+
     return {
       paquetes,
       isCliente,
       getTratamientoNombre,
       calcularDuracionTotal,
-      calcularAhorro
+      calcularAhorro,
+      redirigirALogin
     }
   }
 }

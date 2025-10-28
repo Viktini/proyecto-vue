@@ -52,7 +52,7 @@ import { useRouter } from 'vue-router'
 export default {
   name: 'Login',
   setup() {
-    const store = useStore()
+    const store = useAppStore()
     const router = useRouter()
 
     const loginData = ref({
@@ -86,9 +86,12 @@ export default {
 
       try {
         await store.login(loginData.value)
-        router.push('/')
+        router.push('/home')
       } catch (error) {
-        errorMessage.value = error.message
+        // ✅ Manejo mejorado de errores
+        errorMessage.value = error.response?.data?.message ||
+          error.message ||
+          'Error al iniciar sesión. Verifique sus credenciales.'
       } finally {
         loading.value = false
       }
@@ -130,8 +133,8 @@ export default {
 }
 
 .logo {
-  width: 80px;
-  height: 80px;
+  width: 180px;
+  height: 100px;
   border-radius: 50%;
   margin-bottom: 1rem;
 }

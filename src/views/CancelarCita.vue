@@ -77,7 +77,7 @@ import { validators } from '../utils/validators'
 export default {
   name: 'CancelarCita',
   setup() {
-    const store = useStore()
+    const store = useAppStore()
 
     const carnet = ref('')
     const carnetError = ref('')
@@ -214,7 +214,7 @@ export default {
 }
 
 #carnet-cancelar-cita {
-  width: 250px;
+  width: 300px;
   padding: 0.8rem;
   border: 1px solid #ddd;
   border-radius: 5px;

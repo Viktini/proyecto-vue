@@ -133,7 +133,7 @@
           <router-link v-if="isCliente" to="/reservar-cita" class="btn btn-primary">
             Reservar Cita
           </router-link>
-          <router-link to="/" class="btn btn-secondary">
+          <router-link to="/home" class="btn btn-secondary">
             Volver al Inicio
           </router-link>
         </div>

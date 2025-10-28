@@ -8,7 +8,7 @@
           <p>Email: bellezayrelajacion@gmail.com</p>
           <div class="whatsapp-links">
             <a href="https://wa.me/53059670" class="whatsapp-link" target="_blank">
-              <img src="../assets/whatsapp.png" alt="WhatsApp"> Contactar por WhatsApp
+              <img src="../assets/whatsapp.jpg" alt="WhatsApp"> Contactar por WhatsApp
             </a>
           </div>
         </div>

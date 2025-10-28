@@ -1,5 +1,6 @@
+// router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import store from '../stores'
+import { useAppStore } from '../stores'
 
 // Componentes
 import Login from '../components/Login.vue'
@@ -14,28 +15,32 @@ import AdminDashboard from '../views/AdminDashboard.vue'
 
 const routes = [
   {
+    path: '/',
+    redirect: '/login'
+  },
+  {
     path: '/login',
     name: 'Login',
     component: Login,
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: false }  // ← PÚBLICA
   },
-  /*{
-    path: '/',
+  {
+    path: '/home',
     name: 'Home',
     component: Home,
-    meta: { requiresAuth: true }
-  }*/,
+    meta: { requiresAuth: true }  // ← PÚBLICA
+  },
   {
     path: '/tratamientos',
     name: 'Tratamientos',
     component: Tratamientos,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true }   // ← PRIVADA
   },
   {
     path: '/paquetes',
     name: 'Paquetes',
     component: Paquetes,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true }   // ← PRIVADA
   },
   {
     path: '/reservar-cita',
@@ -75,10 +80,12 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = store.state.auth.isAuthenticated
-  const userRole = store.state.auth.role
+  const store = useAppStore()
+  const isAuthenticated = store.auth.isAuthenticated
+  const userRole = store.auth.role
 
   if (to.meta.requiresAuth && !isAuthenticated) {
+    // Redirigir a login si no está autenticado
     next('/login')
   } else if (to.meta.requiresAuth && to.meta.role && to.meta.role !== userRole) {
     // Redirigir a home si no tiene el rol necesario

@@ -7,9 +7,8 @@
       </div>
       <nav class="nav">
         <ul>
-          <li><router-link to="/" :class="{ active: $route.name === 'Home' }">Inicio</router-link></li>
-          <li><router-link to="/tratamientos"
-              :class="{ active: $route.name === 'Tratamientos' }">Tratamientos</router-link></li>
+          <li><router-link to="/home" :class="{ active: $route.name === 'Home' }">Inicio</router-link></li>
+          <li><router-link to="/tratamientos" :class="{ active: $route.name === 'Tratamientos' }">Tratamientos</router-link></li>
           <li><router-link to="/paquetes" :class="{ active: $route.name === 'Paquetes' }">Paquetes</router-link></li>
           <li v-if="isCliente">
             <router-link to="/reservar-cita" :class="{ active: $route.name === 'ReservarCita' }">Reservar
@@ -45,7 +44,7 @@ import { useAppStore } from '@/stores';
 export default {
   name: 'Header',
   setup() {
-    const store = useAppStore() // ← Cambiar
+    const store = useAppStore()
     const router = useRouter()
 
     const isAdmin = computed(() => store.isAdmin) // ← Getter como propiedad

@@ -21,8 +21,8 @@ export default {
     Footer
   },
   setup() {
-    const store = useAppStore() // ← Cambiar esto
-    const isAuthenticated = computed(() => store.auth.isAuthenticated) // ← Acceso directo
+    const store = useAppStore()
+    const isAuthenticated = computed(() => store.auth.isAuthenticated)
 
     return {
       isAuthenticated
