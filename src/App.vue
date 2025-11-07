@@ -9,10 +9,11 @@
 </template>
 
 <script>
-import { computed } from 'vue'
-import { useAppStore } from '@/stores'
+import { computed, onMounted } from 'vue'
+import { useAppStore } from '@/stores/appStore'
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
+import { useI18nComposable } from './composables/useI18n'
 
 export default {
   name: 'App',
@@ -22,7 +23,13 @@ export default {
   },
   setup() {
     const store = useAppStore()
+    const { initLanguage } = useI18nComposable() // ← Cambiar nombre
+
     const isAuthenticated = computed(() => store.auth.isAuthenticated)
+
+    onMounted(() => {
+      initLanguage()
+    })
 
     return {
       isAuthenticated
@@ -44,13 +51,16 @@ body {
   line-height: 1.6;
   color: #333;
   background-color: #f9f7f7;
+  font-size: 14px;
+  /* Tamaño base más pequeño para móviles */
 }
 
 .container {
   width: 90%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0;
+  padding: 0 15px;
+  /* Agregar padding en móviles */
 }
 
 .main {
@@ -69,6 +79,12 @@ body {
   border: none;
   cursor: pointer;
   text-align: center;
+  font-size: 0.9rem;
+  /* Tamaño más pequeño para móviles */
+  width: 100%;
+  /* Botones de ancho completo en móviles */
+  max-width: 200px;
+  /* Máximo ancho */
 }
 
 .btn-primary {
@@ -137,6 +153,7 @@ body {
   border-radius: 5px;
   text-align: center;
   font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .resultado.exito {
@@ -152,7 +169,32 @@ body {
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+  .container {
+    width: 95%;
+  }
+}
+
 @media (max-width: 768px) {
+  body {
+    font-size: 13px;
+  }
+
+  .container {
+    width: 100%;
+    padding: 0 10px;
+  }
+
+  .main {
+    min-height: calc(100vh - 180px);
+  }
+
+  .btn {
+    padding: 0.7rem 1.2rem;
+    font-size: 0.85rem;
+    max-width: 100%;
+  }
+
   .cta-buttons {
     flex-direction: column;
     align-items: center;
@@ -160,11 +202,34 @@ body {
 
   .form-actions {
     flex-direction: column;
+    gap: 0.5rem;
   }
 
   .action-buttons {
     flex-direction: column;
     align-items: center;
+    gap: 0.5rem;
+  }
+
+  .resultado {
+    margin-top: 1rem;
+    padding: 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 12px;
+  }
+
+  .container {
+    padding: 0 8px;
+  }
+
+  .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
   }
 }
 </style>

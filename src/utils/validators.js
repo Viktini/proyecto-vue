@@ -4,7 +4,7 @@ export const validators = {
   },
   
   carnet: (value) => {
-    return /^\d{1,11}$/.test(value.trim())
+    return /^\d{11}$/.test(value)
   },
   
   telefono: (value) => {
@@ -41,13 +41,15 @@ export const validators = {
     const fechaSeleccionada = new Date(fecha)
     const diaSemana = fechaSeleccionada.getDay()
     
+    if (diaSemana === 6) return false // Domingo cerrado
+    
+    const horaNum = parseInt(hora.split(':')[0])
+    
     if (diaSemana === 5) { // Sábado
-      return hora >= '10:00' && hora <= '18:00'
-    } else if (diaSemana !== 6) { // Lunes a Viernes
-      return hora >= '09:00' && hora <= '20:00'
+      return horaNum >= 10 && horaNum <= 18
     }
     
-    return false
+    return horaNum >= 9 && horaNum <= 20 // Lunes a Viernes
   }
 }
 

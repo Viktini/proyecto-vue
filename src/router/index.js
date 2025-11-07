@@ -1,6 +1,6 @@
 // router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAppStore } from '../stores'
+import { useAppStore } from '../stores/appStore'
 
 // Componentes
 import Login from '../components/Login.vue'
@@ -12,6 +12,7 @@ import ComprarPaquete from '../views/ComprarPaquete.vue'
 import CancelarCita from '../views/CancelarCita.vue'
 import CancelarPaquete from '../views/CancelarPaquete.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
+import DatosUsuario from '../views/DatosUsuario.vue'
 
 const routes = [
   {
@@ -71,6 +72,12 @@ const routes = [
     name: 'AdminDashboard',
     component: AdminDashboard,
     meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/datos-usuario',
+    name: 'DatosUsuario',
+    component: DatosUsuario,
+    meta: { requiresAuth: true, role: 'cliente' }
   }
 ]
 

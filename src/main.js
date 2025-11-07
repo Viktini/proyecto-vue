@@ -2,10 +2,13 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
+import i18n from './config/i18n' // ← Importar la instancia
 
 const app = createApp(App)
+const pinia = createPinia()
 
-app.use(createPinia())  
+app.use(pinia)
 app.use(router)
+app.use(i18n) // ← REGISTRAR i18n en Vue (NUEVO)
 
 app.mount('#app')

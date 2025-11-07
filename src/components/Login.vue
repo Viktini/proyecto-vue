@@ -45,15 +45,19 @@
 </template>
 
 <script>
-import { ref } from 'vue'
-import { useAppStore } from '@/stores'
+import { ref, onMounted } from 'vue'
+import { useAppStore } from '@/stores/appStore'
 import { useRouter } from 'vue-router'
+import { useI18nComposable } from '@/composables/useI18n'
 
 export default {
   name: 'Login',
   setup() {
     const store = useAppStore()
     const router = useRouter()
+    const { t, changeLanguage, currentLanguage } = useI18nComposable()
+
+    const currentLang = ref(currentLanguage())
 
     const loginData = ref({
       username: '',
@@ -63,6 +67,14 @@ export default {
     const errors = ref({})
     const errorMessage = ref('')
     const loading = ref(false)
+
+    onMounted(() => {
+      const savedLang = localStorage.getItem('preferred-language')
+      if (savedLang) {
+        currentLang.value = savedLang
+        changeLanguage(savedLang)
+      }
+    })
 
     const validateForm = () => {
       errors.value = {}
@@ -102,7 +114,10 @@ export default {
       errors,
       errorMessage,
       loading,
-      handleLogin
+      handleLogin,
+      t,
+      changeLanguage,
+      currentLang
     }
   }
 }
@@ -115,7 +130,7 @@ export default {
   justify-content: center;
   align-items: center;
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
-  padding: 2rem;
+  padding: 1rem;
 }
 
 .login-form {
@@ -137,6 +152,20 @@ export default {
   height: 100px;
   border-radius: 50%;
   margin-bottom: 1rem;
+  object-fit: cover;
+}
+
+.language-selector-login {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.language-selector-login select {
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  width: 100%;
+  max-width: 200px;
 }
 
 .form-group {
@@ -148,6 +177,7 @@ export default {
   margin-bottom: 0.5rem;
   font-weight: 600;
   color: #5a5a5a;
+  font-size: 0.95rem;
 }
 
 .form-group input {
@@ -181,6 +211,7 @@ export default {
   background-color: #f8f9fa;
   border-radius: 5px;
   border-left: 4px solid #a2d2ff;
+  font-size: 0.9rem;
 }
 
 .demo-accounts h3 {
@@ -193,5 +224,62 @@ export default {
   margin-bottom: 0.5rem;
   font-size: 0.875rem;
   color: #666;
+  line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 0.5rem;
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
+
+  .login-form {
+    padding: 1.5rem;
+    margin: 0;
+  }
+
+  .logo {
+    width: 150px;
+    height: 80px;
+  }
+
+  .form-group input {
+    padding: 0.7rem;
+    font-size: 0.9rem;
+  }
+
+  .demo-accounts {
+    padding: 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .account-info p {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-form {
+    padding: 1rem;
+  }
+
+  .logo {
+    width: 120px;
+    height: 70px;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    font-size: 0.9rem;
+  }
+
+  .form-group input {
+    padding: 0.6rem;
+  }
 }
 </style>

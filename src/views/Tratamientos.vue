@@ -2,8 +2,8 @@
   <div>
     <section class="page-header">
       <div class="container">
-        <h2>Nuestros Tratamientos</h2>
-        <p>Descubre nuestra amplia gama de tratamientos especializados</p>
+        <h2>{{ $t('treatments.title') }}</h2>
+        <p>{{ $t('treatments.subtitle') }}</p>
       </div>
     </section>
 
@@ -12,9 +12,9 @@
         <!-- Filtros -->
         <div class="filtros-container">
           <div class="filtro-group">
-            <label for="filtro-categoria">Filtrar por categoría:</label>
+            <label for="filtro-categoria">{{ $t('treatments.filterCategory') }}</label>
             <select id="filtro-categoria" v-model="filtroCategoria" class="filtro-select">
-              <option value="">Todas las categorías</option>
+              <option value="">{{ $t('treatments.allCategories') }}</option>
               <option v-for="categoria in categorias" :key="categoria" :value="categoria">
                 {{ categoria }}
               </option>
@@ -22,9 +22,9 @@
           </div>
 
           <div class="filtro-group">
-            <label for="filtro-precio">Filtrar por precio:</label>
+            <label for="filtro-precio">{{ $t('treatments.filterPrice') }}</label>
             <select id="filtro-precio" v-model="filtroPrecio" class="filtro-select">
-              <option value="">Todos los precios</option>
+              <option value="">{{ $t('treatments.allPrices') }}</option>
               <option value="0-30">$0 - $30</option>
               <option value="31-50">$31 - $50</option>
               <option value="51-100">$51 - $100</option>
@@ -32,69 +32,77 @@
           </div>
 
           <div class="filtro-group">
-            <label for="buscar-tratamiento">Buscar tratamiento:</label>
+            <label for="buscar-tratamiento">{{ $t('treatments.searchTreatment') }}</label>
             <input type="text" id="buscar-tratamiento" v-model="busqueda"
-              placeholder="Escribe el nombre del tratamiento..." class="filtro-busqueda">
+              :placeholder="$t('treatments.searchTreatment')" class="filtro-busqueda">
           </div>
         </div>
 
         <!-- Estadísticas -->
-        <div class="estadisticas">
+        <div class="estadisticas" v-if="isAdmin">
           <div class="estadistica-card">
             <div class="estadistica-valor">{{ tratamientosFiltrados.length }}</div>
-            <div class="estadistica-label">Tratamientos disponibles</div>
+            <div class="estadistica-label">{{ $t('treatments.availableTreatments') }}</div>
           </div>
           <div class="estadistica-card">
             <div class="estadistica-valor">{{ categorias.length }}</div>
-            <div class="estadistica-label">Categorías</div>
+            <div class="estadistica-label">{{ $t('treatments.categories') }}</div>
           </div>
           <div class="estadistica-card">
             <div class="estadistica-valor">${{ precioMinimo }} - ${{ precioMaximo }}</div>
-            <div class="estadistica-label">Rango de precios</div>
+            <div class="estadistica-label">{{ $t('treatments.priceRange') }}</div>
           </div>
         </div>
 
-        <!-- Tabla de tratamientos -->
-        <div class="table-container">
+        <!-- Estado sin resultados -->
+        <div v-if="tratamientosFiltrados.length === 0" class="no-resultados">
+          <p>{{ $t('treatments.noResults') }}</p>
+          <button @click="limpiarFiltros" class="btn btn-secondary">
+            {{ $t('treatments.clearFilters') }}
+          </button>
+        </div>
+
+        <!-- VISTA PARA ADMINISTRADOR (Tabla) -->
+        <div v-else-if="isAdmin" class="table-container">
           <table class="data-table">
             <thead>
               <tr>
                 <th @click="ordenarPor('id')" class="sortable">
-                  ID
+                  {{ $t('treatments.id') }}
                   <span v-if="ordenCampo === 'id'" class="sort-icon">
                     {{ ordenDireccion === 'asc' ? '↑' : '↓' }}
                   </span>
                 </th>
                 <th @click="ordenarPor('nombre')" class="sortable">
-                  Nombre
+                  {{ $t('treatments.name') }}
                   <span v-if="ordenCampo === 'nombre'" class="sort-icon">
                     {{ ordenDireccion === 'asc' ? '↑' : '↓' }}
                   </span>
                 </th>
                 <th @click="ordenarPor('categoria')" class="sortable">
-                  Categoría
+                  {{ $t('treatments.category') }}
                   <span v-if="ordenCampo === 'categoria'" class="sort-icon">
                     {{ ordenDireccion === 'asc' ? '↑' : '↓' }}
                   </span>
                 </th>
                 <th @click="ordenarPor('duracion')" class="sortable">
-                  Duración (min)
+                  {{ $t('treatments.duration') }}
                   <span v-if="ordenCampo === 'duracion'" class="sort-icon">
                     {{ ordenDireccion === 'asc' ? '↑' : '↓' }}
                   </span>
                 </th>
                 <th @click="ordenarPor('precio')" class="sortable">
-                  Precio
+                  {{ $t('treatments.price') }}
                   <span v-if="ordenCampo === 'precio'" class="sort-icon">
                     {{ ordenDireccion === 'asc' ? '↑' : '↓' }}
                   </span>
                 </th>
-                <th>Descripción</th>
-                <th v-if="isCliente">Acción</th>
+                <th>{{ $t('treatments.description') }}</th>
+                <th>{{ $t('treatments.actions') }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="tratamiento in tratamientosFiltradosOrdenados" :key="tratamiento.id">
+              <tr v-for="tratamiento in tratamientosPaginados" :key="tratamiento.id">
                 <td class="text-center">{{ tratamiento.id }}</td>
                 <td>
                   <strong>{{ tratamiento.nombre }}</strong>
@@ -104,38 +112,95 @@
                     {{ tratamiento.categoria }}
                   </span>
                 </td>
-                <td class="text-center">{{ tratamiento.duracion }}</td>
-                <td class="text-center precio-cell">
+                <td class="text-center">{{ tratamiento.duracion }} min</td>
+                <td class="text-center">
                   <span class="precio">${{ tratamiento.precio }}</span>
                 </td>
                 <td class="descripcion-cell">
                   {{ tratamiento.descripcion }}
                 </td>
-                <td v-if="isCliente" class="text-center">
-                  <router-link :to="{ name: 'ReservarCita', query: { tratamiento: tratamiento.id } }"
-                    class="btn btn-primary btn-sm">
-                    Reservar
-                  </router-link>
+                <td class="text-center acciones-cell">
+                  <button v-if="isCliente" class="btn btn-primary btn-small" @click="irAReserva(tratamiento)">
+                    {{ $t('treatments.book') }}
+                  </button>
+                  <button class="btn-eliminar" @click="eliminarTratamiento(tratamiento)" v-if="isAdmin">
+                    Eliminar
+                  </button>
                 </td>
               </tr>
             </tbody>
           </table>
+        </div>
 
-          <div v-if="tratamientosFiltrados.length === 0" class="no-resultados">
-            <p>No se encontraron tratamientos que coincidan con los filtros aplicados.</p>
-            <button @click="limpiarFiltros" class="btn btn-secondary">
-              Limpiar filtros
-            </button>
+        <!-- VISTA PARA CLIENTE (Tarjetas) -->
+        <div v-else class="tarjetas-container">
+          <div v-for="tratamiento in tratamientosPaginados" :key="tratamiento.id" class="tarjeta-tratamiento">
+            <div class="contenido-tratamiento">
+              <div class="tarjeta-header">
+                <h3 class="tratamiento-nombre">{{ tratamiento.nombre }}</h3>
+                <span class="categoria-tag" :style="{ backgroundColor: getColorCategoria(tratamiento.categoria) }">
+                  {{ tratamiento.categoria }}
+                </span>
+              </div>
+
+              <p class="descripcion">{{ tratamiento.descripcion }}</p>
+
+              <div class="tarjeta-info">
+                <div class="info-item">
+                  <span class="info-label">Duración:</span>
+                  <span class="info-value">{{ tratamiento.duracion }} min</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Precio:</span>
+                  <span class="precio">${{ tratamiento.precio }}</span>
+                </div>
+              </div>
+
+              <div class="tarjeta-actions">
+                <button class="btn btn-primary btn-reservar" @click="irAReserva(tratamiento)">
+                  {{ $t('treatments.book') }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="action-buttons">
-          <router-link v-if="isCliente" to="/reservar-cita" class="btn btn-primary">
-            Reservar Cita
-          </router-link>
-          <router-link to="/home" class="btn btn-secondary">
-            Volver al Inicio
-          </router-link>
+        <!-- Controles de paginación inferior -->
+        <div class="pagination-controls" v-if="totalPages > 1 && tratamientosFiltrados.length > 0">
+          <div class="pagination-info">
+            Mostrando {{ startItem }}-{{ endItem }} de {{ tratamientosFiltrados.length }} tratamientos
+          </div>
+          <div class="pagination-buttons">
+            <button @click="previousPage" :disabled="currentPage === 1" class="btn-pagination">
+              ‹ Anterior
+            </button>
+
+            <!-- Números de página -->
+            <div class="page-numbers">
+              <button v-for="page in visiblePages" :key="page" @click="goToPage(page)" :class="{
+                'btn-pagination': true,
+                'active': page === currentPage,
+                'ellipsis': page === '...'
+              }" :disabled="page === '...'">
+                {{ page }}
+              </button>
+            </div>
+
+            <button @click="nextPage" :disabled="currentPage === totalPages" class="btn-pagination">
+              Siguiente ›
+            </button>
+          </div>
+
+          <!-- Selector de items por página -->
+          <div class="items-per-page">
+            <label for="itemsPerPage">Mostrar:</label>
+            <select id="itemsPerPage" v-model="itemsPerPage" @change="resetPagination">
+              <option value="9">9</option>
+              <option value="15">15</option>
+              <option value="30">30</option>
+              <option value="50">50</option>
+            </select>
+          </div>
         </div>
       </div>
     </section>
@@ -143,16 +208,22 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
-import { useAppStore } from '@/stores'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useAppStore } from '@/stores/appStore'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'Tratamientos',
   setup() {
-    const store = useAppStore() // ← Cambiar
-
-    const tratamientos = computed(() => store.tratamientos) // ← Acceso directo
+    const store = useAppStore()
+    const router = useRouter()
+    const tratamientos = computed(() => store.tratamientos || [])
     const isCliente = computed(() => store.isCliente)
+    const isAdmin = computed(() => store.isAdmin)
+
+    // Variables de paginación - Por defecto 9 para clientes
+    const currentPage = ref(1)
+    const itemsPerPage = ref(9)
 
     // Filtros y ordenamiento
     const filtroCategoria = ref('')
@@ -160,6 +231,104 @@ export default {
     const busqueda = ref('')
     const ordenCampo = ref('id')
     const ordenDireccion = ref('asc')
+
+    // Computed para paginación
+    const totalPages = computed(() => {
+      return Math.ceil(tratamientosFiltrados.value.length / itemsPerPage.value)
+    })
+
+    const startItem = computed(() => {
+      return (currentPage.value - 1) * itemsPerPage.value + 1
+    })
+
+    const endItem = computed(() => {
+      const end = currentPage.value * itemsPerPage.value
+      return end > tratamientosFiltrados.value.length ? tratamientosFiltrados.value.length : end
+    })
+
+    const tratamientosPaginados = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value
+      const end = start + itemsPerPage.value
+      return tratamientosFiltradosOrdenados.value.slice(start, end)
+    })
+
+    // Números de página visibles
+    const visiblePages = computed(() => {
+      const pages = []
+      const total = totalPages.value
+      const current = currentPage.value
+
+      if (total <= 7) {
+        for (let i = 1; i <= total; i++) {
+          pages.push(i)
+        }
+      } else {
+        if (current <= 4) {
+          for (let i = 1; i <= 5; i++) {
+            pages.push(i)
+          }
+          pages.push('...')
+          pages.push(total)
+        } else if (current >= total - 3) {
+          pages.push(1)
+          pages.push('...')
+          for (let i = total - 4; i <= total; i++) {
+            pages.push(i)
+          }
+        } else {
+          pages.push(1)
+          pages.push('...')
+          for (let i = current - 1; i <= current + 1; i++) {
+            pages.push(i)
+          }
+          pages.push('...')
+          pages.push(total)
+        }
+      }
+
+      return pages
+    })
+
+    // Métodos de paginación
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value++
+      }
+    }
+
+    const previousPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value--
+      }
+    }
+
+    const goToPage = (page) => {
+      if (page !== '...' && page >= 1 && page <= totalPages.value) {
+        currentPage.value = page
+      }
+    }
+
+    const resetPagination = () => {
+      currentPage.value = 1
+    }
+
+    // Watchers para resetear paginación cuando cambian los filtros
+    watch([filtroCategoria, filtroPrecio, busqueda], () => {
+      resetPagination()
+    })
+
+    // Métodos de navegación
+    const irAReserva = (tratamiento) => {
+      store.seleccionarTratamiento(tratamiento)
+      router.push({ name: 'ReservarCita' })
+    }
+
+    const eliminarTratamiento = (tratamiento) => {
+      if (confirm(`¿Estás seguro de que quieres eliminar el tratamiento "${tratamiento.nombre}"?`)) {
+        console.log('Eliminar tratamiento:', tratamiento)
+        // Aquí iría la lógica para eliminar el tratamiento del store
+      }
+    }
 
     // Obtener categorías únicas
     const categorias = computed(() => {
@@ -169,10 +338,12 @@ export default {
 
     // Estadísticas
     const precioMinimo = computed(() => {
+      if (tratamientos.value.length === 0) return 0
       return Math.min(...tratamientos.value.map(t => t.precio))
     })
 
     const precioMaximo = computed(() => {
+      if (tratamientos.value.length === 0) return 0
       return Math.max(...tratamientos.value.map(t => t.precio))
     })
 
@@ -238,7 +409,8 @@ export default {
         'Masajes': '#f8c8dc',
         'Faciales': '#a2d2ff',
         'Manos y Pies': '#ffd6a5',
-        'Corporales': '#caffbf'
+        'Corporales': '#caffbf',
+        'Especiales': '#d8b4fe'
       }
       return colores[categoria] || '#e0e0e0'
     }
@@ -249,15 +421,17 @@ export default {
       busqueda.value = ''
       ordenCampo.value = 'id'
       ordenDireccion.value = 'asc'
+      resetPagination()
     }
 
     onMounted(() => {
-      // Cargar datos si es necesario
+      console.log('Tratamientos cargados:', tratamientos.value)
     })
 
     return {
-      tratamientos: tratamientosFiltradosOrdenados,
+      tratamientosPaginados,
       isCliente,
+      isAdmin,
       filtroCategoria,
       filtroPrecio,
       busqueda,
@@ -267,15 +441,349 @@ export default {
       tratamientosFiltrados,
       precioMinimo,
       precioMaximo,
+      // Variables de paginación
+      currentPage,
+      itemsPerPage,
+      totalPages,
+      startItem,
+      endItem,
+      visiblePages,
+      // Métodos de paginación
+      nextPage,
+      previousPage,
+      goToPage,
+      resetPagination,
+      // Métodos existentes
       ordenarPor,
       getColorCategoria,
-      limpiarFiltros
+      limpiarFiltros,
+      irAReserva,
+      eliminarTratamiento
     }
   }
 }
 </script>
 
 <style scoped>
+/* ESTILOS MEJORADOS PARA LA TABLA DEL ADMINISTRADOR */
+.table-container {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.data-table th {
+  background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
+  color: #5a5a5a;
+  font-weight: 600;
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 2px solid #dee2e6;
+  position: relative;
+}
+
+.data-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.data-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.sort-icon {
+  margin-left: 0.5rem;
+  font-weight: bold;
+  position: absolute;
+  right: 0.5rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.categoria-tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  color: #5a5a5a;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-block;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.precio {
+  color: #ff6b95;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.descripcion-cell {
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  max-width: 250px;
+}
+
+.acciones-cell {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  min-width: 120px;
+}
+
+/* BOTONES MEJORADOS */
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary {
+  background: #ff6b95;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #e55a82;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.btn-small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+.btn-eliminar {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-eliminar:hover {
+  background-color: #da190b;
+  transform: translateY(-1px);
+}
+
+/* ESTILOS MEJORADOS PARA TARJETAS DE CLIENTE */
+.tarjetas-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.tarjeta-tratamiento {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.tarjeta-tratamiento:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.contenido-tratamiento {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: 1rem;
+}
+
+.tarjeta-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tratamiento-nombre {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #5a5a5a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.descripcion {
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  flex-grow: 1;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tarjeta-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 0;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-label {
+  font-size: 0.85rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 0.9rem;
+  color: #5a5a5a;
+  font-weight: 600;
+}
+
+.tarjeta-actions {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+.btn-reservar {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ESTILOS GENERALES MEJORADOS */
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-info {
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-pagination {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  background: white;
+  color: #5a5a5a;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+  min-width: 40px;
+  text-align: center;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  background: #f8c8dc;
+  border-color: #f8c8dc;
+  color: white;
+}
+
+.btn-pagination:disabled {
+  background: #f5f5f5;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-pagination.active {
+  background: #ff6b95;
+  border-color: #ff6b95;
+  color: white;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.items-per-page {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.items-per-page select {
+  padding: 0.4rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: white;
+}
+
 .page-header {
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
   padding: 2rem 0;
@@ -357,128 +865,83 @@ export default {
   font-size: 0.9rem;
 }
 
-.table-container {
-  background: white;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  margin-bottom: 2rem;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th {
-  background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
-  color: #5a5a5a;
-  font-weight: 600;
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 2px solid #dee2e6;
-}
-
-.data-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.data-table tbody tr:hover {
-  background-color: #f8f9fa;
-}
-
-.sortable {
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-}
-
-.sortable:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-}
-
-.sort-icon {
-  margin-left: 0.5rem;
-  font-weight: bold;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.categoria-tag {
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
-  color: #5a5a5a;
-  font-size: 0.8rem;
-  font-weight: 600;
-  display: inline-block;
-}
-
-.precio-cell {
-  font-weight: 600;
-}
-
-.precio {
-  color: #ff6b95;
-  font-size: 1.1rem;
-}
-
-.descripcion-cell {
-  max-width: 300px;
-  color: #666;
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
-
-.btn-sm {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.875rem;
-}
-
 .no-resultados {
   text-align: center;
   padding: 3rem;
-  color: #6c757d;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  margin: 2rem 0;
 }
 
 .no-resultados p {
   margin-bottom: 1rem;
   font-size: 1.1rem;
+  color: #666;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-}
-
+/* RESPONSIVE MEJORADO */
 @media (max-width: 768px) {
   .filtros-container {
     grid-template-columns: 1fr;
   }
 
-  .estadisticas {
-    grid-template-columns: repeat(2, 1fr);
+  .tarjetas-container {
+    grid-template-columns: 1fr;
   }
 
-  .table-container {
-    overflow-x: auto;
+  .pagination-controls {
+    flex-direction: column;
+    text-align: center;
   }
 
   .data-table {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
   }
 
   .data-table th,
   .data-table td {
-    padding: 0.75rem 0.5rem;
+    padding: 0.5rem;
   }
 
-  .action-buttons {
+  .acciones-cell {
     flex-direction: column;
-    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .btn-small {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .btn-eliminar {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    padding: 1.5rem 0;
+  }
+
+  .content-section {
+    padding: 1rem 0;
+  }
+
+  .estadisticas {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .page-numbers {
+    order: -1;
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

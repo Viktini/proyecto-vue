@@ -2,35 +2,27 @@
   <div>
     <section class="page-header">
       <div class="container">
-        <h2>Cancelar Paquete</h2>
-        <p>Introduzca su carnet de identidad para ver y cancelar sus paquetes</p>
+        <h2>{{ $t('cancelPackage.title') }}</h2>
       </div>
     </section>
 
     <section class="content-section">
       <div class="container">
-        <div class="form-group" id="form-cancelar-paquete">
-          <label for="carnet-cancelar-paquete" class="label-cancelar">Carnet de Identidad *</label>
-          <input type="text" id="carnet-cancelar-paquete" v-model="carnet" :class="{ error: carnetError }"
-            placeholder="Solo números (máximo once dígitos)" maxlength="11" @input="validarCarnet">
-          <button @click="buscarPaquetes" class="btn btn-primary" :disabled="loading">
-            {{ loading ? 'Buscando...' : 'Buscar Paquetes' }}
-          </button>
-        </div>
+        <!-- Solo mostrar cuando hay paquetes -->
+        <div v-if="paquetesTotales.length > 0" class="paquetes-container">
+          <h3>{{ $t('cancelPackage.yourPackages') }}</h3>
 
-        <div v-if="paquetesEncontrados.length > 0" class="paquetes-container">
-          <h3>Sus Paquetes</h3>
           <div class="paquetes-grid">
-            <div v-for="paquete in paquetesEncontrados" :key="paquete.id" class="paquete-card"
+            <div v-for="paquete in paquetesPaginados" :key="paquete.id" class="paquete-card"
               :class="{ seleccionado: paqueteSeleccionado === paquete.id }" @click="seleccionarPaquete(paquete.id)">
               <div class="paquete-header">
                 <h4>{{ paquete.paquete }}</h4>
-                <div class="paquete-id">N° {{ paquete.id }}</div>
+                <div class="paquete-id">{{ $t('cancelPackage.packageNumber', { number: paquete.id }) }}</div>
               </div>
               <div class="paquete-body">
-                <p><strong>Fecha de inicio:</strong> {{ formatFecha(paquete.fechaInicio) }}</p>
+                <p><strong>{{ $t('cancelPackage.startDate') }}</strong> {{ formatFecha(paquete.fechaInicio) }}</p>
                 <div class="paquete-tratamientos">
-                  <h5>Tratamientos incluidos:</h5>
+                  <h5>{{ $t('cancelPackage.includedTreatments') }}</h5>
                   <ul>
                     <li v-for="tratamiento in paquete.tratamientos" :key="tratamiento">
                       {{ tratamiento }}
@@ -45,21 +37,62 @@
               </div>
             </div>
           </div>
-          <button @click="cancelarPaquete" class="btn btn-danger" :disabled="!paqueteSeleccionado || cancelando">
-            {{ cancelando ? 'Cancelando...' : 'Cancelar Paquete Seleccionado' }}
-          </button>
+
+          <div class="action-buttons">
+            <button @click="cancelarPaquete" class="btn btn-danger" :disabled="!paqueteSeleccionado || cancelando">
+              {{ cancelando ? $t('cancelPackage.canceling') : $t('cancelPackage.cancelSelected') }}
+            </button>
+          </div>
         </div>
 
-        <div v-if="paquetesEncontrados.length === 0 && busquedaRealizada" class="no-result">
-          <p>No se encontraron paquetes activos para este carnet de identidad.</p>
+        <!-- Mostrar cuando no hay paquetes -->
+        <div v-else-if="busquedaRealizada" class="no-packages">
+          <div class="no-packages-content">
+            <div class="no-packages-icon">📦</div>
+            <h3>{{ $t('cancelPackage.noPackagesTitle') }}</h3>
+            <p>{{ $t('cancelPackage.noPackagesMessage') }}</p>
+            <router-link to="/comprar-paquete" class="btn btn-primary">
+              {{ $t('cancelPackage.buyFirstPackage') }}
+            </router-link>
+          </div>
         </div>
 
-        <div v-if="resultado" class="resultado" :class="resultado.tipo">
+        <!-- Mostrar mientras se carga -->
+        <div v-else class="loading">
+          <p>{{ $t('cancelPackage.loading') }}</p>
+        </div>
+
+        <!-- Controles de paginación -->
+        <div class="pagination-controls" v-if="totalPages > 1">
+          <div class="pagination-info">
+            {{ $t('cancelPackage.paginationInfo', {
+              start: startItem,
+              end: endItem,
+              total: paquetesTotales.length
+            }) }}
+          </div>
+          <div class="pagination-buttons">
+            <button @click="previousPage" :disabled="currentPage === 1" class="btn-pagination">
+              {{ $t('cancelPackage.previous') }}
+            </button>
+            <div class="page-numbers">
+              <button v-for="page in visiblePages" :key="page" @click="goToPage(page)" :class="{
+                'btn-pagination': true,
+                'active': page === currentPage,
+                'ellipsis': page === '...'
+              }" :disabled="page === '...'">
+                {{ page }}
+              </button>
+            </div>
+            <button @click="nextPage" :disabled="currentPage === totalPages" class="btn-pagination">
+              {{ $t('cancelPackage.next') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Mensaje de resultado -->
+        <div v-if="resultado" class="resultado-message" :class="resultado.tipo">
           {{ resultado.mensaje }}
-        </div>
-
-        <div class="action-buttons">
-          <router-link to="/" class="btn btn-secondary">Volver al Inicio</router-link>
         </div>
       </div>
     </section>
@@ -67,56 +100,132 @@
 </template>
 
 <script>
-import { ref } from 'vue'
-import { useAppStore } from '@/stores'
-import { validators } from '../utils/validators'
+import { ref, onMounted, computed } from 'vue'
+import { useAppStore } from '@/stores/appStore'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'CancelarPaquete',
   setup() {
+    const { t } = useI18n()
     const store = useAppStore()
 
-    const carnet = ref('')
-    const carnetError = ref('')
-    const paquetesEncontrados = ref([])
+    // Variables de paginación
+    const currentPage = ref(1)
+    const itemsPerPage = ref(5)
+
+    // Cambiar el nombre para mayor claridad
+    const paquetesTotales = ref([]) // Todos los paquetes encontrados
     const paqueteSeleccionado = ref(null)
     const loading = ref(false)
     const cancelando = ref(false)
     const busquedaRealizada = ref(false)
     const resultado = ref(null)
 
-    const validarCarnet = () => {
-      if (!carnet.value.trim()) {
-        carnetError.value = 'El carnet es requerido'
-        return false
+    // Computed para los paquetes que se muestran (paginados)
+    const paquetesPaginados = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value
+      const end = start + itemsPerPage.value
+      return paquetesTotales.value.slice(start, end)
+    })
+
+    // Computed para paginación
+    const totalPages = computed(() => {
+      return Math.ceil(paquetesTotales.value.length / itemsPerPage.value)
+    })
+
+    const startItem = computed(() => {
+      return (currentPage.value - 1) * itemsPerPage.value + 1
+    })
+
+    const endItem = computed(() => {
+      const end = currentPage.value * itemsPerPage.value
+      return end > paquetesTotales.value.length ? paquetesTotales.value.length : end
+    })
+
+    const visiblePages = computed(() => {
+      const pages = []
+      const total = totalPages.value
+      const current = currentPage.value
+
+      if (total <= 5) {
+        for (let i = 1; i <= total; i++) {
+          pages.push(i)
+        }
+      } else {
+        if (current <= 3) {
+          for (let i = 1; i <= 4; i++) {
+            pages.push(i)
+          }
+          pages.push('...')
+          pages.push(total)
+        } else if (current >= total - 2) {
+          pages.push(1)
+          pages.push('...')
+          for (let i = total - 3; i <= total; i++) {
+            pages.push(i)
+          }
+        } else {
+          pages.push(1)
+          pages.push('...')
+          for (let i = current - 1; i <= current + 1; i++) {
+            pages.push(i)
+          }
+          pages.push('...')
+          pages.push(total)
+        }
       }
 
-      if (!validators.carnet(carnet.value)) {
-        carnetError.value = 'Solo números (máximo 11 dígitos)'
-        return false
-      }
+      return pages
+    })
 
-      carnetError.value = ''
-      return true
+    // Métodos de paginación (sin cambios)
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value++
+      }
     }
 
-    const buscarPaquetes = async () => {
-      if (!validarCarnet()) return
+    const previousPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value--
+      }
+    }
 
+    const goToPage = (page) => {
+      if (page !== '...' && page >= 1 && page <= totalPages.value) {
+        currentPage.value = page
+      }
+    }
+
+    const resetPagination = () => {
+      currentPage.value = 1
+    }
+
+    // Métodos específicos de paquetes
+    const cargarPaquetesDelUsuario = () => {
       loading.value = true
-      paquetesEncontrados.value = []
-      busquedaRealizada.value = true
+      const usuario = store.auth.user || {}
+      const carnetUsuario = usuario.carnet
+
+      if (!carnetUsuario) {
+        mostrarResultado(t('cancelPackage.errors.noUserCard'), 'error')
+        loading.value = false
+        busquedaRealizada.value = true
+        return
+      }
 
       try {
-        // Usar el getter de Vuex para buscar paquetes por carnet
-        const paquetes = store.paquetesPorCarnet(carnet.value) // ← Getter como función
-        paquetesEncontrados.value = paquetes.filter(paquete => paquete.estado === 'Activo')
+        // Obtener todos los paquetes del usuario
+        const paquetes = store.paquetesPorCarnet(carnetUsuario)
 
-        if (paquetesEncontrados.value.length === 0) {
-          mostrarResultado('No se encontraron paquetes activos para este carnet.', 'error')
-        }
+        // Filtrar solo los paquetes activos para cancelar
+        paquetesTotales.value = paquetes.filter(paquete => paquete.estado === 'Activo')
+        busquedaRealizada.value = true
+
+        resetPagination()
       } catch (error) {
-        mostrarResultado('Error al buscar paquetes. Intente nuevamente.', 'error')
+        mostrarResultado(t('cancelPackage.errors.loadError'), 'error')
       } finally {
         loading.value = false
       }
@@ -128,23 +237,24 @@ export default {
 
     const cancelarPaquete = async () => {
       if (!paqueteSeleccionado.value) {
-        mostrarResultado('Por favor, seleccione un paquete para cancelar.', 'error')
+        mostrarResultado(t('cancelPackage.selectPackage'), 'error')
         return
       }
 
       cancelando.value = true
 
       try {
-        await store.cancelarPaquete(paqueteSeleccionado.value) // ← Sin dispatch
-        mostrarResultado('¡Paquete cancelado exitosamente!', 'exito')
+        await store.cancelarPaquete(paqueteSeleccionado.value)
+        mostrarResultado(t('cancelPackage.success'), 'exito')
 
         // Actualizar la lista
-        paquetesEncontrados.value = paquetesEncontrados.value.filter(
+        paquetesTotales.value = paquetesTotales.value.filter(
           paquete => paquete.id !== paqueteSeleccionado.value
         )
         paqueteSeleccionado.value = null
+        resetPagination()
       } catch (error) {
-        mostrarResultado('Error al cancelar el paquete. Intente nuevamente.', 'error')
+        mostrarResultado(t('cancelPackage.error'), 'error')
       } finally {
         cancelando.value = false
       }
@@ -166,26 +276,105 @@ export default {
       }, 5000)
     }
 
+    onMounted(() => {
+      cargarPaquetesDelUsuario()
+    })
+
     return {
-      carnet,
-      carnetError,
-      paquetesEncontrados,
+      // Datos para el template
+      paquetesTotales, // Todos los paquetes (para verificar si hay datos)
+      paquetesPaginados, // Paquetes de la página actual
       paqueteSeleccionado,
       loading,
       cancelando,
       busquedaRealizada,
       resultado,
-      validarCarnet,
-      buscarPaquetes,
+      // Variables de paginación
+      currentPage,
+      itemsPerPage,
+      totalPages,
+      startItem,
+      endItem,
+      visiblePages,
+      // Métodos de paginación
+      nextPage,
+      previousPage,
+      goToPage,
+      // Métodos específicos de paquetes
       seleccionarPaquete,
       cancelarPaquete,
-      formatFecha
+      formatFecha,
+      t
     }
   }
 }
 </script>
 
 <style scoped>
+/* Tus estilos se mantienen igual */
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-info {
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-pagination {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  background: white;
+  color: #5a5a5a;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+  min-width: 40px;
+  text-align: center;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  background: #f8c8dc;
+  border-color: #f8c8dc;
+  color: white;
+}
+
+.btn-pagination:disabled {
+  background: #f5f5f5;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-pagination.active {
+  background: #ff6b95;
+  border-color: #ff6b95;
+  color: white;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
 .page-header {
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
   padding: 2rem 0;
@@ -199,28 +388,6 @@ export default {
 
 .content-section {
   padding: 2rem 0;
-}
-
-#form-cancelar-paquete {
-  display: flex;
-  justify-content: center;
-  align-items: end;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.label-cancelar {
-  margin-right: 1rem;
-  font-weight: 600;
-  color: #5a5a5a;
-}
-
-#carnet-cancelar-paquete {
-  width: 300px;
-  padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1rem;
 }
 
 .paquetes-container {
@@ -329,11 +496,68 @@ export default {
   font-weight: 600;
 }
 
-.no-result {
+.no-packages {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.no-packages-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.no-packages-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.no-packages h3 {
+  color: #5a5a5a;
+  margin-bottom: 1rem;
+}
+
+.no-packages p {
+  color: #666;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.loading {
   text-align: center;
   padding: 2rem;
-  color: #6c757d;
+  color: #666;
   font-style: italic;
+}
+
+.resultado-message {
+  padding: 1rem;
+  border-radius: 5px;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.resultado-message.exito {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.resultado-message.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.resultado-message.info {
+  background: #cce7ff;
+  color: #004085;
+  border: 1px solid #b3d7ff;
 }
 
 .action-buttons {
@@ -343,18 +567,50 @@ export default {
 }
 
 @media (max-width: 768px) {
-  #form-cancelar-paquete {
+  .pagination-controls {
     flex-direction: column;
-    align-items: stretch;
+    text-align: center;
+    gap: 1rem;
   }
 
-  #carnet-cancelar-paquete {
-    width: 100%;
-    margin-bottom: 1rem;
+  .pagination-buttons {
+    order: 1;
+  }
+
+  .pagination-info {
+    order: 2;
+  }
+
+  .btn-pagination {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    min-width: 35px;
+  }
+
+  .page-numbers {
+    gap: 0.1rem;
   }
 
   .paquetes-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagination-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .page-numbers {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-pagination {
+    width: 100%;
+    max-width: 120px;
   }
 }
 </style>

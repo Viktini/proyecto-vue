@@ -2,73 +2,36 @@
   <div>
     <section class="page-header">
       <div class="container">
-        <h2>Comprar Paquete</h2>
-        <p>Seleccione un paquete predefinido o personalice el suyo</p>
+        <h2>{{ $t('buyPackage.title') }}</h2>
+        <p>{{ $t('buyPackage.subtitle') }}</p>
       </div>
     </section>
 
     <section class="content-section">
       <div class="container">
         <form @submit.prevent="handleSubmit" class="form">
-          <!-- Datos Personales -->
+          <!-- Solo mostrar Selección de Paquete -->
           <div class="form-section">
-            <h3>Datos Personales</h3>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="nombre-paquete">Nombre Completo *</label>
-                <input type="text" id="nombre-paquete" v-model="formData.nombre" :class="{ error: fieldErrors.nombre }"
-                  placeholder="Solo letras (sin números ni símbolos)" @blur="validateField('nombre')">
-                <span v-if="fieldErrors.nombre" class="error-message">{{ fieldErrors.nombre }}</span>
-              </div>
-
-              <div class="form-group">
-                <label for="carnet-paquete">Carnet de Identidad *</label>
-                <input type="text" id="carnet-paquete" v-model="formData.carnet" :class="{ error: fieldErrors.carnet }"
-                  placeholder="Solo números (máximo once dígitos)" maxlength="11" @blur="validateField('carnet')">
-                <span v-if="fieldErrors.carnet" class="error-message">{{ fieldErrors.carnet }}</span>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="telefono-paquete">Teléfono *</label>
-                <input type="tel" id="telefono-paquete" v-model="formData.telefono"
-                  :class="{ error: fieldErrors.telefono }" placeholder="8 dígitos" maxlength="8"
-                  @blur="validateField('telefono')">
-                <span v-if="fieldErrors.telefono" class="error-message">{{ fieldErrors.telefono }}</span>
-              </div>
-
-              <div class="form-group">
-                <label for="email-paquete">Email *</label>
-                <input type="email" id="email-paquete" v-model="formData.email" :class="{ error: fieldErrors.email }"
-                  placeholder="usuario@gmail.com" @blur="validateField('email')">
-                <span v-if="fieldErrors.email" class="error-message">{{ fieldErrors.email }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Selección de Paquete -->
-          <div class="form-section">
-            <h3>Selección de Paquete</h3>
+            <h3>{{ $t('buyPackage.packageSelection') }}</h3>
             <div class="form-group">
-              <label for="tipo-paquete">Tipo de Paquete *</label>
+              <label for="tipo-paquete">{{ $t('buyPackage.packageType') }}</label>
               <select id="tipo-paquete" v-model="formData.tipoPaquete" :class="{ error: fieldErrors.tipoPaquete }"
                 @change="onTipoPaqueteChange">
-                <option value="">Seleccione una opción</option>
-                <option value="predefinido">Paquete Predefinido</option>
-                <option value="personalizado">Paquete Personalizado</option>
+                <option value="">{{ $t('buyPackage.selectOption') }}</option>
+                <option value="predefinido">{{ $t('buyPackage.predefined') }}</option>
+                <option value="personalizado">{{ $t('buyPackage.personalized') }}</option>
               </select>
               <span v-if="fieldErrors.tipoPaquete" class="error-message">{{ fieldErrors.tipoPaquete }}</span>
             </div>
 
             <!-- Paquete Predefinido -->
             <div v-if="formData.tipoPaquete === 'predefinido'" class="form-group">
-              <label for="paquete">Paquete *</label>
+              <label for="paquete">{{ $t('buyPackage.package') }}</label>
               <select id="paquete" v-model="formData.paqueteSeleccionado"
                 :class="{ error: fieldErrors.paqueteSeleccionado }" @change="validateField('paqueteSeleccionado')">
-                <option value="">Seleccione un paquete</option>
+                <option value="">{{ $t('buyPackage.selectPackage') }}</option>
                 <option v-for="paquete in paquetes" :key="paquete.id" :value="paquete">
-                  {{ paquete.nombre }} - ${{ paquete.precio }}
+                  {{ paquete.nombre }} - ${{ paquete.precio }} ({{ calcularDuracionTotal(paquete.tratamientos) }} min)
                 </option>
               </select>
               <span v-if="fieldErrors.paqueteSeleccionado" class="error-message">{{ fieldErrors.paqueteSeleccionado
@@ -79,22 +42,27 @@
                 <h4>{{ formData.paqueteSeleccionado.nombre }}</h4>
                 <p>{{ formData.paqueteSeleccionado.descripcion }}</p>
                 <div class="tratamientos-lista">
-                  <h5>Tratamientos incluidos:</h5>
+                  <h5>{{ $t('packages.includedTreatments') }}</h5>
                   <ul>
                     <li v-for="tratamientoId in formData.paqueteSeleccionado.tratamientos" :key="tratamientoId">
-                      {{ getTratamientoNombre(tratamientoId) }}
+                      {{ getTratamientoNombre(tratamientoId) }} ({{ getTratamientoDuracion(tratamientoId) }} min)
                     </li>
                   </ul>
                 </div>
                 <div class="precio-total">
-                  <strong>Precio total: ${{ formData.paqueteSeleccionado.precio }}</strong>
+                  <strong>{{ $t('buyPackage.totalPrice', { amount: formData.paqueteSeleccionado.precio }) }}</strong>
+                  <br>
+                  <strong>{{ $t('buyPackage.totalDuration', {
+                    minutes:
+                      calcularDuracionTotal(formData.paqueteSeleccionado.tratamientos)
+                  }) }}</strong>
                 </div>
               </div>
             </div>
 
             <!-- Paquete Personalizado -->
             <div v-if="formData.tipoPaquete === 'personalizado'" class="form-group">
-              <label>Seleccione los tratamientos para su paquete personalizado *</label>
+              <label>{{ $t('buyPackage.selectTreatments') }}</label>
               <div class="checkbox-group">
                 <div v-for="tratamiento in tratamientos" :key="tratamiento.id" class="checkbox-item">
                   <input type="checkbox" :id="`tratamiento-${tratamiento.id}`" :value="tratamiento.id"
@@ -109,55 +77,50 @@
 
               <!-- Resumen Paquete Personalizado -->
               <div v-if="formData.tratamientosPersonalizados.length > 0" class="paquete-personalizado-info">
-                <h4>Su Paquete Personalizado</h4>
+                <h4>{{ $t('buyPackage.yourPersonalizedPackage') }}</h4>
                 <div class="tratamientos-lista">
-                  <h5>Tratamientos seleccionados:</h5>
+                  <h5>{{ $t('buyPackage.selectedTreatments') }}</h5>
                   <ul>
                     <li v-for="tratamientoId in formData.tratamientosPersonalizados" :key="tratamientoId">
-                      {{ getTratamientoNombre(tratamientoId) }} - ${{ getTratamientoPrecio(tratamientoId) }}
+                      {{ getTratamientoNombre(tratamientoId) }} - ${{ getTratamientoPrecio(tratamientoId) }} ({{
+                        getTratamientoDuracion(tratamientoId) }} min)
                     </li>
                   </ul>
                 </div>
                 <div class="precio-total">
-                  <strong>Precio total: ${{ calcularPrecioTotal() }}</strong>
+                  <strong>{{ $t('buyPackage.totalPrice', { amount: calcularPrecioTotal() }) }}</strong>
+                  <br>
+                  <strong>{{ $t('buyPackage.totalDuration', { minutes: calcularDuracionTotalPersonalizado() })
+                  }}</strong>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Fecha de Inicio -->
+          <!-- Fecha-->
           <div class="form-section">
-            <h3>Programación</h3>
+            <h3>{{ $t('buyPackage.scheduling') }}</h3>
             <div class="form-group">
-              <label for="fecha-inicio">Fecha de Inicio *</label>
-              <input type="date" id="fecha-inicio" v-model="formData.fechaInicio"
-                :class="{ error: fieldErrors.fechaInicio }" :min="minDate" @change="validateField('fechaInicio')">
-              <span v-if="fieldErrors.fechaInicio" class="error-message">{{ fieldErrors.fechaInicio }}</span>
+              <label for="fecha">{{ $t('buyPackage.Date') }}</label>
+              <input type="date" id="fecha" v-model="formData.fecha" :class="{ error: fieldErrors.fecha }"
+                :min="minDate" @change="validateField('fecha')">
+              <span v-if="fieldErrors.fecha" class="error-message">{{ fieldErrors.fecha }}</span>
             </div>
 
             <div class="form-group">
               <label class="label-fecha">
-                ATENCIÓN: La reservación se debe de hacer a partir de un día de antelación
+                {{ $t('buyPackage.attention') }}
               </label>
-            </div>
-          </div>
-
-          <!-- Observaciones -->
-          <div class="form-section">
-            <div class="form-group">
-              <label for="observaciones-paquete">Observaciones o Preferencias</label>
-              <textarea id="observaciones-paquete" v-model="formData.observaciones" rows="3"
-                placeholder="Indique cualquier preferencia especial o observación..."></textarea>
             </div>
           </div>
 
           <!-- Acciones -->
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" :disabled="loading">
-              {{ loading ? 'Procesando...' : 'Comprar Paquete' }}
+              {{ loading ? $t('buyPackage.processing') : $t('buyPackage.buy') }}
             </button>
             <button type="button" class="btn btn-secondary" @click="resetForm">
-              Cancelar
+              {{ $t('buyPackage.cancel') }}
             </button>
           </div>
         </form>
@@ -166,14 +129,16 @@
           <h3>{{ resultado.titulo }}</h3>
           <p>{{ resultado.mensaje }}</p>
           <div v-if="resultado.detalles" class="detalles-compra">
-            <h4>Detalles de su compra:</h4>
+            <h4>{{ $t('buyPackage.purchaseDetails') }}</h4>
             <ul>
-              <li><strong>Número de compra:</strong> {{ resultado.detalles.id }}</li>
-              <li><strong>Nombre:</strong> {{ resultado.detalles.nombre }}</li>
-              <li><strong>Paquete:</strong> {{ resultado.detalles.paquete }}</li>
-              <li><strong>Tratamientos:</strong> {{ resultado.detalles.tratamientos.join(', ') }}</li>
-              <li><strong>Fecha de inicio:</strong> {{ resultado.detalles.fechaInicio }}</li>
-              <li><strong>Estado:</strong> {{ resultado.detalles.estado }}</li>
+              <li><strong>{{ $t('buyPackage.purchaseNumber') }}</strong> {{ resultado.detalles.id }}</li>
+              <li><strong>{{ $t('buyPackage.name') }}</strong> {{ resultado.detalles.nombre }}</li>
+              <li><strong>{{ $t('buyPackage.packageName') }}</strong> {{ resultado.detalles.paquete }}</li>
+              <li><strong>{{ $t('buyPackage.treatments') }}</strong> {{ resultado.detalles.tratamientos.join(', ') }}
+              </li>
+              <li><strong>{{ $t('buyPackage.startDateDetail') }}</strong> {{ resultado.detalles.fechaInicio }}</li>
+              <li><strong>{{ $t('buyPackage.price') }}</strong> ${{ resultado.detalles.precio }}</li>
+              <li><strong>{{ $t('buyPackage.status') }}</strong> {{ resultado.detalles.estado }}</li>
             </ul>
           </div>
         </div>
@@ -184,32 +149,29 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { useAppStore } from '@/stores'
+import { useAppStore } from '@/stores/appStore'
 import { validators } from '../utils/validators'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'ComprarPaquete',
   setup() {
+    const { t } = useI18n()
     const store = useAppStore()
 
     const formData = ref({
-      nombre: '',
-      carnet: '',
-      telefono: '',
-      email: '',
-      tipoPaquete: '',
-      paqueteSeleccionado: null,
+      tipoPaquete: store.tipoPaqueteSeleccionado || '',
+      paqueteSeleccionado: store.paqueteSeleccionado || null,
       tratamientosPersonalizados: [],
-      fechaInicio: '',
-      observaciones: ''
+      fecha: ''
     })
 
     const fieldErrors = ref({})
     const resultado = ref(null)
     const loading = ref(false)
 
-    const tratamientos = computed(() => store.tratamientos) // ← Acceso directo
-    const paquetes = computed(() => store.paquetes)
+    const tratamientos = computed(() => store.tratamientos || [])
+    const paquetes = computed(() => store.paquetes || [])
 
     const minDate = computed(() => {
       const tomorrow = new Date()
@@ -223,37 +185,21 @@ export default {
       let message = ''
 
       switch (field) {
-        case 'nombre':
-          isValid = validators.nombre(value)
-          message = isValid ? '' : 'Solo se permiten letras y espacios'
-          break
-        case 'carnet':
-          isValid = validators.carnet(value)
-          message = isValid ? '' : 'Solo números (máximo 11 dígitos)'
-          break
-        case 'telefono':
-          isValid = validators.telefono(value)
-          message = isValid ? '' : 'Debe tener exactamente 8 dígitos'
-          break
-        case 'email':
-          isValid = validators.email(value)
-          message = isValid ? '' : 'Debe ser un email válido de Gmail'
-          break
         case 'tipoPaquete':
           isValid = validators.select(value)
-          message = isValid ? '' : 'Seleccione un tipo de paquete'
+          message = isValid ? '' : t('buyPackage.validation.selectPackageType')
           break
         case 'paqueteSeleccionado':
           isValid = formData.value.tipoPaquete !== 'predefinido' || value !== null
-          message = isValid ? '' : 'Seleccione un paquete predefinido'
+          message = isValid ? '' : t('buyPackage.validation.selectPackage')
           break
         case 'tratamientosPersonalizados':
           isValid = formData.value.tipoPaquete !== 'personalizado' || value.length > 0
-          message = isValid ? '' : 'Seleccione al menos un tratamiento'
+          message = isValid ? '' : t('buyPackage.validation.selectAtLeastOne')
           break
-        case 'fechaInicio':
-          isValid = validators.fecha(value) && validators.validarDiaDescanso(value)
-          message = isValid ? '' : 'Fecha inválida o domingo (cerrado)'
+        case 'fecha':
+          isValid = validators.fecha(value)
+          message = isValid ? '' : t('buyPackage.validation.invalidDate')
           break
       }
 
@@ -267,7 +213,7 @@ export default {
     }
 
     const validateForm = () => {
-      const baseFields = ['nombre', 'carnet', 'telefono', 'email', 'tipoPaquete', 'fechaInicio']
+      const baseFields = ['tipoPaquete', 'fecha']
       baseFields.forEach(field => validateField(field))
 
       if (formData.value.tipoPaquete === 'predefinido') {
@@ -280,9 +226,10 @@ export default {
     }
 
     const onTipoPaqueteChange = () => {
-      // Limpiar selecciones anteriores al cambiar tipo
       formData.value.paqueteSeleccionado = null
       formData.value.tratamientosPersonalizados = []
+      // Limpiar errores al cambiar tipo
+      fieldErrors.value = {}
     }
 
     const getTratamientoNombre = (id) => {
@@ -295,18 +242,38 @@ export default {
       return tratamiento ? tratamiento.precio : 0
     }
 
+    const getTratamientoDuracion = (id) => {
+      const tratamiento = tratamientos.value.find(t => t.id === id)
+      return tratamiento ? tratamiento.duracion : 0
+    }
+
+    const calcularDuracionTotal = (tratamientosIds) => {
+      return tratamientosIds.reduce((total, id) => {
+        return total + getTratamientoDuracion(id)
+      }, 0)
+    }
+
     const calcularPrecioTotal = () => {
       return formData.value.tratamientosPersonalizados.reduce((total, tratamientoId) => {
         return total + getTratamientoPrecio(tratamientoId)
       }, 0)
     }
 
+    const calcularDuracionTotalPersonalizado = () => {
+      return formData.value.tratamientosPersonalizados.reduce((total, tratamientoId) => {
+        return total + getTratamientoDuracion(tratamientoId)
+      }, 0)
+    }
+
     const handleSubmit = async () => {
+      // Limpiar resultado anterior
+      resultado.value = null
+
       if (!validateForm()) {
         resultado.value = {
           tipo: 'error',
-          titulo: 'Error de Validación',
-          mensaje: 'Por favor, corrija los errores en el formulario.'
+          titulo: t('buyPackage.validationError'),
+          mensaje: t('buyPackage.validationMessage')
         }
         return
       }
@@ -314,45 +281,61 @@ export default {
       loading.value = true
 
       try {
-        let paqueteData
+        // Obtener datos del usuario del store
+        const usuario = store.auth?.user || {}
 
-        if (formData.value.tipoPaquete === 'predefinido') {
-          paqueteData = {
-            nombre: formData.value.nombre,
-            carnet: formData.value.carnet,
-            telefono: formData.value.telefono,
-            paquete: formData.value.paqueteSeleccionado.nombre,
-            tratamientos: formData.value.paqueteSeleccionado.tratamientos.map(id => getTratamientoNombre(id)),
-            fechaInicio: formData.value.fechaInicio,
-            observaciones: formData.value.observaciones
-          }
-        } else {
-          paqueteData = {
-            nombre: formData.value.nombre,
-            carnet: formData.value.carnet,
-            telefono: formData.value.telefono,
-            paquete: 'Paquete Personalizado',
-            tratamientos: formData.value.tratamientosPersonalizados.map(id => getTratamientoNombre(id)),
-            fechaInicio: formData.value.fechaInicio,
-            observaciones: formData.value.observaciones
-          }
+        let paqueteData = {
+          // Datos del usuario desde el store
+          nombre: usuario.nombre || '',
+          carnet: usuario.carnet || '',
+          telefono: usuario.telefono || '',
+          email: usuario.email || '',
+          observaciones: usuario.observaciones || '',
+          fechaInicio: formData.value.fecha
         }
 
-        const compra = await store.comprarPaquete(paqueteData) // ← Sin dispatch
+        if (formData.value.tipoPaquete === 'predefinido') {
+          // Paquete predefinido
+          paqueteData.paqueteId = formData.value.paqueteSeleccionado.id
+        } else {
+          // Paquete personalizado
+          paqueteData.paqueteId = -1 // Indicador de paquete personalizado
+          paqueteData.tratamientos = formData.value.tratamientosPersonalizados.map(id => getTratamientoNombre(id))
+          paqueteData.precioPersonalizado = calcularPrecioTotal()
+        }
+
+        // DEBUG: Verificar datos antes de enviar
+        console.log('Datos a enviar a comprarPaquete:', paqueteData)
+
+        const compra = await store.comprarPaquete(paqueteData)
+
+        // DEBUG: Verificar respuesta
+        console.log('Respuesta de comprarPaquete:', compra)
 
         resultado.value = {
           tipo: 'exito',
-          titulo: '¡Paquete Comprado Exitosamente!',
-          mensaje: 'Su paquete ha sido activado. Recibirá un email de confirmación.',
-          detalles: compra
+          titulo: t('buyPackage.success'),
+          mensaje: t('buyPackage.successMessage'),
+          detalles: {
+            id: compra.id,
+            nombre: compra.nombre,
+            paquete: compra.nombrePaquete,
+            tratamientos: compra.tratamientos,
+            fechaInicio: compra.fechaInicio,
+            estado: compra.estado,
+            precio: compra.precioPaquete
+          }
         }
 
+        // Resetear formulario después de éxito
         resetForm()
+
       } catch (error) {
+        console.error('Error en handleSubmit:', error)
         resultado.value = {
           tipo: 'error',
-          titulo: 'Error al Comprar',
-          mensaje: 'Ha ocurrido un error al procesar su compra. Por favor, intente nuevamente.'
+          titulo: t('buyPackage.error'),
+          mensaje: t('buyPackage.errorMessage') + ': ' + error.message
         }
       } finally {
         loading.value = false
@@ -361,22 +344,36 @@ export default {
 
     const resetForm = () => {
       formData.value = {
-        nombre: '',
-        carnet: '',
-        telefono: '',
-        email: '',
         tipoPaquete: '',
         paqueteSeleccionado: null,
         tratamientosPersonalizados: [],
-        fechaInicio: minDate.value,
-        observaciones: ''
+        fecha: minDate.value
       }
       fieldErrors.value = {}
+
+      // No limpiar resultado inmediatamente para que se vea el mensaje de éxito
+      setTimeout(() => {
+        resultado.value = null
+      }, 5000)
+
+      // Limpiar selección del store
+      if (store.limpiarSeleccionPaquete) {
+        store.limpiarSeleccionPaquete()
+      }
     }
 
     onMounted(() => {
       // Inicializar fecha mínima
-      formData.value.fechaInicio = minDate.value
+      if (!formData.value.fecha) {
+        formData.value.fecha = minDate.value
+      }
+
+      // Limpiar la selección después de usarla
+      setTimeout(() => {
+        if (store.limpiarSeleccionPaquete) {
+          store.limpiarSeleccionPaquete()
+        }
+      }, 100)
     })
 
     return {
@@ -391,9 +388,13 @@ export default {
       onTipoPaqueteChange,
       getTratamientoNombre,
       getTratamientoPrecio,
+      getTratamientoDuracion,
+      calcularDuracionTotal,
       calcularPrecioTotal,
+      calcularDuracionTotalPersonalizado,
       handleSubmit,
-      resetForm
+      resetForm,
+      t
     }
   }
 }
@@ -409,6 +410,7 @@ export default {
 .page-header h2 {
   color: #5a5a5a;
   margin-bottom: 0.5rem;
+  font-size: 1.8rem;
 }
 
 .content-section {
@@ -440,12 +442,6 @@ export default {
   font-size: 1.2rem;
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
 .form-group {
   margin-bottom: 1.5rem;
 }
@@ -455,6 +451,7 @@ export default {
   margin-bottom: 0.5rem;
   font-weight: 600;
   color: #5a5a5a;
+  font-size: 0.95rem;
 }
 
 .label-fecha {
@@ -465,8 +462,7 @@ export default {
 }
 
 .form-group input,
-.form-group select,
-.form-group textarea {
+.form-group select {
   width: 100%;
   padding: 0.8rem;
   border: 1px solid #ddd;
@@ -476,8 +472,7 @@ export default {
 }
 
 .form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.form-group select:focus {
   outline: none;
   border-color: #a2d2ff;
 }
@@ -503,6 +498,7 @@ export default {
   background: #f8f9fa;
   border-radius: 5px;
   transition: background-color 0.3s;
+  font-size: 0.9rem;
 }
 
 .checkbox-item:hover {
@@ -512,6 +508,7 @@ export default {
 .checkbox-item input {
   width: auto;
   margin-right: 0.5rem;
+  transform: scale(1.1);
 }
 
 .paquete-info,
@@ -521,12 +518,14 @@ export default {
   background: #f8f9fa;
   border-radius: 5px;
   border-left: 4px solid #a2d2ff;
+  font-size: 0.9rem;
 }
 
 .paquete-info h4,
 .paquete-personalizado-info h4 {
   color: #5a5a5a;
   margin-bottom: 0.5rem;
+  font-size: 1.1rem;
 }
 
 .tratamientos-lista h5 {
@@ -572,11 +571,13 @@ export default {
   padding: 1rem;
   background: rgba(255, 255, 255, 0.5);
   border-radius: 5px;
+  font-size: 0.9rem;
 }
 
 .detalles-compra h4 {
   margin-bottom: 1rem;
   color: #5a5a5a;
+  font-size: 1.1rem;
 }
 
 .detalles-compra ul {
@@ -587,19 +588,95 @@ export default {
 .detalles-compra li {
   margin-bottom: 0.5rem;
   padding: 0.25rem 0;
+  font-size: 0.9rem;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
-  .form-row {
-    grid-template-columns: 1fr;
+  .page-header {
+    padding: 1.5rem 0;
+  }
+
+  .page-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .content-section {
+    padding: 1rem 0;
+  }
+
+  .form {
+    padding: 1.5rem;
+    margin: 0 10px;
+  }
+
+  .form-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+  }
+
+  .form-section h3 {
+    font-size: 1.1rem;
   }
 
   .checkbox-group {
     grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .checkbox-item {
+    padding: 0.4rem;
+    font-size: 0.85rem;
   }
 
   .form-actions {
     flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .precio-total {
+    text-align: center;
+    font-size: 1rem;
+  }
+
+  .paquete-info,
+  .paquete-personalizado-info {
+    padding: 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .detalles-compra {
+    padding: 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .form {
+    padding: 1rem;
+    margin: 0 5px;
+  }
+
+  .page-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .form-section h3 {
+    font-size: 1rem;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 0.7rem;
+    font-size: 0.9rem;
+  }
+
+  .checkbox-item {
+    font-size: 0.8rem;
+  }
+
+  .precio-total {
+    font-size: 0.9rem;
   }
 }
 </style>

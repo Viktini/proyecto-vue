@@ -2,8 +2,8 @@
   <div>
     <section class="page-header">
       <div class="container">
-        <h2>Reservar Cita</h2>
-        <p>Complete el formulario para reservar su cita</p>
+        <h2>{{ $t('reserve.title') }}</h2>
+        <p>{{ $t('reserve.subtitle') }}</p>
       </div>
     </section>
 
@@ -11,50 +11,31 @@
       <div class="container">
         <form @submit.prevent="handleSubmit" class="form">
           <div class="form-group">
-            <label for="nombre">Nombre Completo *</label>
-            <input type="text" id="nombre" v-model="formData.nombre" :class="{ error: fieldErrors.nombre }"
-              placeholder="Solo letras (sin números ni símbolos)" @blur="validateField('nombre')">
-            <span v-if="fieldErrors.nombre" class="error-message">{{ fieldErrors.nombre }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="carnet">Carnet de Identidad *</label>
-            <input type="text" id="carnet" v-model="formData.carnet" :class="{ error: fieldErrors.carnet }"
-              placeholder="Solo números (máximo once dígitos)" maxlength="11" @blur="validateField('carnet')">
-            <span v-if="fieldErrors.carnet" class="error-message">{{ fieldErrors.carnet }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="telefono">Teléfono *</label>
-            <input type="tel" id="telefono" v-model="formData.telefono" :class="{ error: fieldErrors.telefono }"
-              placeholder="8 dígitos" maxlength="8" @blur="validateField('telefono')">
-            <span v-if="fieldErrors.telefono" class="error-message">{{ fieldErrors.telefono }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="tratamiento">Tratamiento *</label>
+            <label for="tratamiento">{{ $t('reserve.treatment') }}</label>
             <select id="tratamiento" v-model="formData.tratamiento" :class="{ error: fieldErrors.tratamiento }"
               @change="validateField('tratamiento')">
-              <option value="">Seleccione un tratamiento</option>
-              <option v-for="tratamiento in tratamientos" :key="tratamiento.id" :value="tratamiento.nombre">
+              <option value="">{{ $t('reserve.selectTreatment') }}</option>
+              <option v-for="tratamiento in tratamientosDisponibles" :key="tratamiento.id" :value="tratamiento.nombre">
                 {{ tratamiento.nombre }} - ${{ tratamiento.precio }} ({{ tratamiento.duracion }} min)
               </option>
             </select>
-            <span v-if="fieldErrors.tratamiento" class="error-message">{{ fieldErrors.tratamiento }}</span>
+            <span v-if="fieldErrors.tratamiento" class="error-message">
+              {{ fieldErrors.tratamiento }}
+            </span>
           </div>
 
           <div class="form-group">
-            <label for="fecha">Fecha *</label>
+            <label for="fecha">{{ $t('reserve.date') }}</label>
             <input type="date" id="fecha" v-model="formData.fecha" :class="{ error: fieldErrors.fecha }" :min="minDate"
-              @change="validateField('fecha')">
+              @change="validateField('fecha'); actualizarHorasDisponibles()">
             <span v-if="fieldErrors.fecha" class="error-message">{{ fieldErrors.fecha }}</span>
           </div>
 
           <div class="form-group">
-            <label for="hora">Hora *</label>
+            <label for="hora">{{ $t('reserve.time') }}</label>
             <select id="hora" v-model="formData.hora" :class="{ error: fieldErrors.hora }"
               @change="validateField('hora')">
-              <option value="">Seleccione una hora</option>
+              <option value="">{{ $t('reserve.selectTime') }}</option>
               <option v-for="hora in horasDisponibles" :key="hora" :value="hora">
                 {{ hora }}
               </option>
@@ -64,10 +45,10 @@
 
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" :disabled="loading">
-              {{ loading ? 'Reservando...' : 'Reservar Cita' }}
+              {{ loading ? $t('reserve.reserving') : $t('reserve.reserve') }}
             </button>
             <button type="button" class="btn btn-secondary" @click="resetForm">
-              Limpiar
+              {{ $t('reserve.clear') }}
             </button>
           </div>
         </form>
@@ -76,14 +57,11 @@
           <h3>{{ resultado.titulo }}</h3>
           <p>{{ resultado.mensaje }}</p>
           <div v-if="resultado.detalles" class="detalles">
-            <h4>Detalles de la reserva:</h4>
+            <h4>{{ $t('reserve.reservationDetails') }}</h4>
             <ul>
-              <li><strong>Nombre:</strong> {{ resultado.detalles.nombre }}</li>
-              <li><strong>Carnet:</strong> {{ resultado.detalles.carnet }}</li>
-              <li><strong>Teléfono:</strong> {{ resultado.detalles.telefono }}</li>
-              <li><strong>Tratamiento:</strong> {{ resultado.detalles.tratamiento }}</li>
-              <li><strong>Fecha:</strong> {{ resultado.detalles.fecha }}</li>
-              <li><strong>Hora:</strong> {{ resultado.detalles.hora }}</li>
+              <li><strong>{{ $t('reserve.treatment') }}:</strong> {{ resultado.detalles.tratamiento }}</li>
+              <li><strong>{{ $t('reserve.date') }}:</strong> {{ resultado.detalles.fecha }}</li>
+              <li><strong>{{ $t('reserve.time') }}:</strong> {{ resultado.detalles.hora }}</li>
             </ul>
           </div>
         </div>
@@ -94,19 +72,24 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { useAppStore } from '@/stores'
+import { useAppStore } from '@/stores/appStore'
 import { validators } from '../utils/validators'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'ReservarCita',
   setup() {
+    const { t } = useI18n()
     const store = useAppStore()
 
     const formData = ref({
-      nombre: '',
-      carnet: '',
-      telefono: '',
-      tratamiento: '',
+      // Datos del usuario autenticado
+      nombre: store.auth.user?.nombre || '',
+      carnet: store.auth.user?.carnet || '',
+      telefono: store.auth.user?.telefono || '',
+      email: store.auth.user?.email || '',
+      // Tratamiento - se preselecciona con el del store o queda vacío
+      tratamiento: store.tratamientoSeleccionado?.nombre || '',
       fecha: '',
       hora: ''
     })
@@ -115,7 +98,8 @@ export default {
     const resultado = ref(null)
     const loading = ref(false)
 
-    const tratamientos = computed(() => store.tratamientos) // ← Acceso directo
+    // Todos los tratamientos disponibles
+    const tratamientosDisponibles = computed(() => store.tratamientos || [])
 
     const minDate = computed(() => {
       const tomorrow = new Date()
@@ -149,18 +133,6 @@ export default {
       let message = ''
 
       switch (field) {
-        case 'nombre':
-          isValid = validators.nombre(value)
-          message = isValid ? '' : 'Solo se permiten letras y espacios'
-          break
-        case 'carnet':
-          isValid = validators.carnet(value)
-          message = isValid ? '' : 'Solo números (máximo 11 dígitos)'
-          break
-        case 'telefono':
-          isValid = validators.telefono(value)
-          message = isValid ? '' : 'Debe tener exactamente 8 dígitos'
-          break
         case 'tratamiento':
           isValid = validators.select(value)
           message = isValid ? '' : 'Seleccione un tratamiento'
@@ -185,17 +157,22 @@ export default {
     }
 
     const validateForm = () => {
-      const fields = ['nombre', 'carnet', 'telefono', 'tratamiento', 'fecha', 'hora']
+      const fields = ['tratamiento', 'fecha', 'hora']
       fields.forEach(field => validateField(field))
       return Object.keys(fieldErrors.value).length === 0
+    }
+
+    const actualizarHorasDisponibles = () => {
+      // Forzar la actualización de las horas disponibles cuando cambia la fecha
+      formData.value.hora = ''
     }
 
     const handleSubmit = async () => {
       if (!validateForm()) {
         resultado.value = {
           tipo: 'error',
-          titulo: 'Error de Validación',
-          mensaje: 'Por favor, corrija los errores en el formulario.'
+          titulo: t('reserve.validationError'), // CORREGIDO: usar t() en lugar de $t
+          mensaje: t('reserve.validationMessage') // CORREGIDO: usar t() en lugar de $t
         }
         return
       }
@@ -203,12 +180,19 @@ export default {
       loading.value = true
 
       try {
-        const cita = await store.reservarCita(formData.value) // ← Sin dispatch
+        // Crear objeto completo con todos los datos
+        const citaCompleta = {
+          ...formData.value,
+          estado: 'Confirmada',
+          fechaReserva: new Date().toISOString()
+        }
+
+        const cita = await store.reservarCita(citaCompleta)
 
         resultado.value = {
           tipo: 'exito',
-          titulo: '¡Cita Reservada Exitosamente!',
-          mensaje: 'Su cita ha sido confirmada. Le enviaremos un recordatorio.',
+          titulo: t('reserve.success'), // CORREGIDO: usar t() en lugar de $t
+          mensaje: t('reserve.successMessage'), // CORREGIDO: usar t() en lugar de $t
           detalles: cita
         }
 
@@ -216,8 +200,8 @@ export default {
       } catch (error) {
         resultado.value = {
           tipo: 'error',
-          titulo: 'Error al Reservar',
-          mensaje: 'Ha ocurrido un error al procesar su reserva. Por favor, intente nuevamente.'
+          titulo: t('reserve.error'), // CORREGIDO: usar t() en lugar de $t
+          mensaje: t('reserve.errorMessage') // CORREGIDO: usar t() en lugar de $t
         }
       } finally {
         loading.value = false
@@ -225,16 +209,20 @@ export default {
     }
 
     const resetForm = () => {
+      const usuario = store.auth.user || {}
+
       formData.value = {
-        nombre: '',
-        carnet: '',
-        telefono: '',
-        tratamiento: '',
-        fecha: '',
+        nombre: usuario.nombre || '',
+        carnet: usuario.carnet || '',
+        telefono: usuario.telefono || '',
+        email: usuario.email || '',
+        tratamiento: '', // Limpiar el tratamiento al resetear
+        fecha: minDate.value, // Mantener la fecha mínima
         hora: ''
       }
+
       fieldErrors.value = {}
-      resultado.value = null
+      // NO limpiar resultado aquí para que se muestre el mensaje de éxito
     }
 
     onMounted(() => {
@@ -242,6 +230,21 @@ export default {
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
       formData.value.fecha = tomorrow.toISOString().split('T')[0]
+
+      // Cargar datos del usuario si están disponibles
+      const usuario = store.auth.user || {}
+      if (usuario.nombre) {
+        formData.value.nombre = usuario.nombre
+        formData.value.carnet = usuario.carnet
+        formData.value.telefono = usuario.telefono
+        formData.value.email = usuario.email
+      }
+
+      // Limpiar la selección del tratamiento después de usarla
+      // para que no se mantenga en futuras visitas
+      setTimeout(() => {
+        store.tratamientoSeleccionado = null
+      }, 100)
     })
 
     return {
@@ -249,12 +252,14 @@ export default {
       fieldErrors,
       resultado,
       loading,
-      tratamientos,
       minDate,
       horasDisponibles,
+      tratamientosDisponibles,
       validateField,
       handleSubmit,
-      resetForm
+      resetForm,
+      actualizarHorasDisponibles,
+      t
     }
   }
 }
@@ -326,6 +331,26 @@ export default {
   margin-top: 2rem;
 }
 
+.resultado {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.resultado.exito {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.resultado.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
 .detalles {
   margin-top: 1rem;
   padding: 1rem;
@@ -350,6 +375,11 @@ export default {
 @media (max-width: 768px) {
   .form-actions {
     flex-direction: column;
+  }
+
+  .resultado {
+    padding: 1rem;
+    margin: 1rem 0;
   }
 }
 </style>

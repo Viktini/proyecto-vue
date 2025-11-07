@@ -3,37 +3,31 @@
     <section class="hero">
       <div class="container">
         <div class="hero-content">
-          <h2>Bienvenido a nuestro oasis de bienestar</h2>
-          <p>En Belleza y Relajación, nos dedicamos a ofrecerte una experiencia única de cuidado personal y
-            rejuvenecimiento. Nuestros tratamientos de lujo están diseñados para brindarte el máximo confort y
-            resultados excepcionales.</p>
+          <h2>{{ $t('home.welcome') }}</h2>
+          <p>{{ $t('home.description') }}</p>
         </div>
       </div>
     </section>
 
     <section class="features">
       <div class="container">
-        <h2>Nuestros Servicios</h2>
-        <div class="features-grid">
+        <div class="features-grid" v-if="isCliente">
           <div class="feature-card">
-            <h3>Tratamientos Especializados</h3>
-            <p>Masajes terapéuticos, faciales rejuvenecedores, hidroterapia y más.</p>
-            <router-link to="/tratamientos" class="btn-link">Ver Tratamientos</router-link>
+            <img src="@/assets/camilla.jpg" alt="Camilla de spa" class="feature-image" />
           </div>
           <div class="feature-card">
-            <h3>Paquetes Exclusivos</h3>
-            <p>Experiencias completas diseñadas para tu máximo bienestar.</p>
-            <router-link to="/paquetes" class="btn-link">Ver Paquetes</router-link>
+            <img src="@/assets/piedras.jpg" alt="Masaje con piedras" class="feature-image" />
           </div>
-          <div class="feature-card" v-if="isCliente">
-            <h3>Reserva Online</h3>
-            <p>Agenda tu cita de forma rápida y sencilla desde cualquier lugar.</p>
-            <router-link to="/reservar-cita" class="btn-link">Reservar Ahora</router-link>
+          <div class="feature-card">
+            <img src="@/assets/toalla.jpg" alt="Toalla y flores relajantes" class="feature-image" />
           </div>
-          <div class="feature-card" v-if="isAdmin">
-            <h3>Panel de Administración</h3>
-            <p>Gestiona citas, paquetes y configuraciones del sistema.</p>
-            <router-link to="/admin" class="btn-link">Ir al Panel</router-link>
+        </div>
+
+        <div class="features-grid" v-if="isAdmin">
+          <div class="feature-card">
+            <h3>{{ $t('home.adminPanel') }}</h3>
+            <p>{{ $t('home.adminDescription') }}</p>
+            <router-link to="/admin" class="btn-link">{{ $t('home.goToPanel') }}</router-link>
           </div>
         </div>
       </div>
@@ -43,19 +37,20 @@
 
 <script>
 import { computed } from 'vue'
-import { useAppStore } from '@/stores'
+import { useAppStore } from '@/stores/appStore'
 
 export default {
   name: 'Home',
   setup() {
-    const store = useAppStore() // ← Cambiar
-    const isCliente = computed(() => store.isCliente) // ← Getter como propiedad
+    const store = useAppStore()
+    const isCliente = computed(() => store.isCliente)
     const isAdmin = computed(() => store.isAdmin)
 
     return {
       isCliente,
       isAdmin
     }
+    // ✅ NO necesita importar i18n aquí
   }
 }
 </script>
@@ -120,5 +115,13 @@ export default {
 .feature-card p {
   margin-bottom: 1.5rem;
   color: #666;
+}
+
+.feature-image {
+  width: 100%;
+  height: auto;
+  border-radius: 15px;
+  object-fit: cover;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 </style>

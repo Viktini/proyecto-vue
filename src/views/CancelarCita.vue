@@ -2,40 +2,29 @@
   <div>
     <section class="page-header">
       <div class="container">
-        <h2>Cancelar Cita</h2>
-        <p>Introduzca su carnet de identidad para ver y cancelar sus citas</p>
+        <h2>{{ $t('cancelAppointment.title') }}</h2>
       </div>
     </section>
 
     <section class="content-section">
       <div class="container">
-        <div class="form-group" id="form-cancelar-cita">
-          <label for="carnet-cancelar" class="label-cancelar">Carnet de Identidad *</label>
-          <input type="text" id="carnet-cancelar-cita" v-model="carnet" :class="{ error: carnetError }"
-            placeholder="Solo números (máximo once dígitos)" maxlength="11" @input="validarCarnet">
-          <button @click="buscarCitas" class="btn btn-primary" :disabled="loading">
-            {{ loading ? 'Buscando...' : 'Buscar Citas' }}
-          </button>
-        </div>
-
+        <!-- Solo mostrar cuando hay citas -->
         <div v-if="citasEncontradas.length > 0" class="citas-container">
-          <h3>Sus Citas</h3>
+          <h3>{{ $t('cancelAppointment.yourAppointments') }}</h3>
+
           <div class="table-container">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Seleccionar</th>
-                  <th>Fecha</th>
-                  <th>Hora</th>
-                  <th>Tratamiento</th>
-                  <th>Estado</th>
+                  <th>{{ $t('cancelAppointment.date') }}</th>
+                  <th>{{ $t('cancelAppointment.time') }}</th>
+                  <th>{{ $t('cancelAppointment.treatment') }}</th>
+                  <th>{{ $t('cancelAppointment.status') }}</th>
+                  <th>{{ $t('cancelAppointment.actions') }}</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="cita in citasEncontradas" :key="cita.id">
-                  <td>
-                    <input type="radio" name="cita-seleccionada" :value="cita.id" v-model="citaSeleccionada">
-                  </td>
+                <tr v-for="cita in citasPaginadas" :key="cita.id">
                   <td>{{ formatFecha(cita.fecha) }}</td>
                   <td>{{ cita.hora }}</td>
                   <td>{{ cita.tratamiento }}</td>
@@ -44,25 +33,74 @@
                       {{ cita.estado }}
                     </span>
                   </td>
+                  <td>
+                    <button @click="cancelarCita(cita.id)" class="btn-cancelar" :disabled="cancelandoId === cita.id">
+                      {{ cancelandoId === cita.id ? $t('cancelAppointment.canceling') :
+                        $t('cancelAppointment.cancelButton') }}
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <button @click="cancelarCita" class="btn btn-danger" :disabled="!citaSeleccionada || cancelando">
-            {{ cancelando ? 'Cancelando...' : 'Cancelar Cita Seleccionada' }}
-          </button>
+
+          <!-- Controles de paginación -->
+          <div class="pagination-controls" v-if="totalPages > 1">
+            <div class="pagination-info">
+              {{ $t('cancelAppointment.paginationInfo', {
+                start: startItem,
+                end: endItem,
+                total: citasEncontradas.length
+              }) }}
+            </div>
+            <div class="pagination-buttons">
+              <button @click="previousPage" :disabled="currentPage === 1" class="btn-pagination">
+                {{ $t('cancelAppointment.previous') }}
+              </button>
+              <div class="page-numbers">
+                <button v-for="page in visiblePages" :key="page" @click="goToPage(page)" :class="{
+                  'btn-pagination': true,
+                  'active': page === currentPage,
+                  'ellipsis': page === '...'
+                }" :disabled="page === '...'">
+                  {{ page }}
+                </button>
+              </div>
+              <button @click="nextPage" :disabled="currentPage === totalPages" class="btn-pagination">
+                {{ $t('cancelAppointment.next') }}
+              </button>
+            </div>
+            <div class="items-per-page">
+              <label for="itemsPerPage">{{ $t('cancelAppointment.show') }}:</label>
+              <select id="itemsPerPage" v-model="itemsPerPage" @change="resetPagination">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        <div v-if="citasEncontradas.length === 0 && busquedaRealizada" class="no-result">
-          <p>No se encontraron citas activas para este carnet de identidad.</p>
+        <!-- Mostrar cuando no hay citas -->
+        <div v-else-if="busquedaRealizada" class="no-appointments">
+          <div class="no-appointments-content">
+            <div class="no-appointments-icon">📅</div>
+            <h3>{{ $t('cancelAppointment.noAppointmentsTitle') }}</h3>
+            <p>{{ $t('cancelAppointment.noAppointmentsMessage') }}</p>
+            <router-link to="/reservar" class="btn btn-primary">
+              {{ $t('cancelAppointment.bookFirstAppointment') }}
+            </router-link>
+          </div>
         </div>
 
-        <div v-if="resultado" class="resultado" :class="resultado.tipo">
+        <!-- Mostrar mientras se carga -->
+        <div v-else class="loading">
+          <p>{{ $t('cancelAppointment.loading') }}</p>
+        </div>
+
+        <!-- Mensaje de resultado -->
+        <div v-if="resultado" class="resultado-message" :class="resultado.tipo">
           {{ resultado.mensaje }}
-        </div>
-
-        <div class="action-buttons">
-          <router-link to="/" class="btn btn-secondary">Volver al Inicio</router-link>
         </div>
       </div>
     </section>
@@ -70,82 +108,156 @@
 </template>
 
 <script>
-import { ref } from 'vue'
-import { useAppStore } from '@/stores'
-import { validators } from '../utils/validators'
+import { ref, onMounted, computed } from 'vue'
+import { useAppStore } from '@/stores/appStore'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'CancelarCita',
   setup() {
+    const { t } = useI18n()
     const store = useAppStore()
 
-    const carnet = ref('')
-    const carnetError = ref('')
-    const citasEncontradas = ref([])
-    const citaSeleccionada = ref(null)
+    // Variables de paginación
+    const currentPage = ref(1)
+    const itemsPerPage = ref(10)
+
+    const citasEncontradas = ref([]) // Lista completa de citas
     const loading = ref(false)
-    const cancelando = ref(false)
+    const cancelandoId = ref(null) // ID de la cita que se está cancelando
     const busquedaRealizada = ref(false)
     const resultado = ref(null)
 
-    const validarCarnet = () => {
-      if (!carnet.value.trim()) {
-        carnetError.value = 'El carnet es requerido'
-        return false
+    // Computed para paginación
+    const totalPages = computed(() => {
+      return Math.ceil(citasEncontradas.value.length / itemsPerPage.value)
+    })
+
+    const startItem = computed(() => {
+      return (currentPage.value - 1) * itemsPerPage.value + 1
+    })
+
+    const endItem = computed(() => {
+      const end = currentPage.value * itemsPerPage.value
+      return end > citasEncontradas.value.length ? citasEncontradas.value.length : end
+    })
+
+    const citasPaginadas = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value
+      const end = start + itemsPerPage.value
+      return citasEncontradas.value.slice(start, end)
+    })
+
+    const visiblePages = computed(() => {
+      const pages = []
+      const total = totalPages.value
+      const current = currentPage.value
+
+      if (total <= 7) {
+        for (let i = 1; i <= total; i++) {
+          pages.push(i)
+        }
+      } else {
+        if (current <= 4) {
+          for (let i = 1; i <= 5; i++) {
+            pages.push(i)
+          }
+          pages.push('...')
+          pages.push(total)
+        } else if (current >= total - 3) {
+          pages.push(1)
+          pages.push('...')
+          for (let i = total - 4; i <= total; i++) {
+            pages.push(i)
+          }
+        } else {
+          pages.push(1)
+          pages.push('...')
+          for (let i = current - 1; i <= current + 1; i++) {
+            pages.push(i)
+          }
+          pages.push('...')
+          pages.push(total)
+        }
       }
 
-      if (!validators.carnet(carnet.value)) {
-        carnetError.value = 'Solo números (máximo 11 dígitos)'
-        return false
-      }
+      return pages
+    })
 
-      carnetError.value = ''
-      return true
+    // Métodos de paginación
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value++
+      }
     }
 
-    const buscarCitas = async () => {
-      if (!validarCarnet()) return
+    const previousPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value--
+      }
+    }
 
+    const goToPage = (page) => {
+      if (page !== '...' && page >= 1 && page <= totalPages.value) {
+        currentPage.value = page
+      }
+    }
+
+    const resetPagination = () => {
+      currentPage.value = 1
+    }
+
+    const cargarCitasDelUsuario = () => {
       loading.value = true
-      citasEncontradas.value = []
-      busquedaRealizada.value = true
+      const usuario = store.auth.user || {}
+      const carnetUsuario = usuario.carnet
+
+      if (!carnetUsuario) {
+        mostrarResultado(t('cancelAppointment.errors.noUserCard'), 'error')
+        loading.value = false
+        busquedaRealizada.value = true
+        return
+      }
 
       try {
-        // Usar el getter de Pinia
-        const citas = store.citasPorCarnet(carnet.value) // ← Getter como función
-        citasEncontradas.value = citas.filter(cita => cita.estado === 'Confirmada')
+        console.log('Cargando citas para carnet:', carnetUsuario)
 
-        if (citasEncontradas.value.length === 0) {
-          mostrarResultado('No se encontraron citas activas para este carnet.', 'error')
-        }
+        // Obtener todas las citas del usuario
+        const citas = store.citasPorCarnet(carnetUsuario)
+
+        console.log('Citas encontradas:', citas)
+
+        // Filtrar solo las citas confirmadas para cancelar
+        citasEncontradas.value = citas.filter(cita => cita.estado === 'Confirmada')
+        busquedaRealizada.value = true
+
+        console.log('Citas confirmadas:', citasEncontradas.value)
+
+        resetPagination()
       } catch (error) {
-        mostrarResultado('Error al buscar citas. Intente nuevamente.', 'error')
+        mostrarResultado(t('cancelAppointment.errors.loadError'), 'error')
       } finally {
         loading.value = false
       }
     }
 
-    const cancelarCita = async () => {
-      if (!citaSeleccionada.value) {
-        mostrarResultado('Por favor, seleccione una cita para cancelar.', 'error')
-        return
-      }
-
-      cancelando.value = true
+    const cancelarCita = async (citaId) => {
+      cancelandoId.value = citaId
 
       try {
-        await store.cancelarCita(citaSeleccionada.value) // ← Sin dispatch
-        mostrarResultado('¡Cita cancelada exitosamente!', 'exito')
+        await store.cancelarCita(citaId)
+        mostrarResultado(t('cancelAppointment.success'), 'exito')
 
-        // Actualizar la lista
+        // Actualizar la lista completa
         citasEncontradas.value = citasEncontradas.value.filter(
-          cita => cita.id !== citaSeleccionada.value
+          cita => cita.id !== citaId
         )
-        citaSeleccionada.value = null
+        resetPagination()
       } catch (error) {
-        mostrarResultado('Error al cancelar la cita. Intente nuevamente.', 'error')
+        console.error('Error al cancelar cita:', error)
+        mostrarResultado(t('cancelAppointment.error'), 'error')
       } finally {
-        cancelando.value = false
+        cancelandoId.value = null
       }
     }
 
@@ -165,25 +277,116 @@ export default {
       }, 5000)
     }
 
+    onMounted(() => {
+      cargarCitasDelUsuario()
+    })
+
     return {
-      carnet,
-      carnetError,
       citasEncontradas,
-      citaSeleccionada,
+      citasPaginadas,
       loading,
-      cancelando,
+      cancelandoId,
       busquedaRealizada,
       resultado,
-      validarCarnet,
-      buscarCitas,
+      // Variables de paginación
+      currentPage,
+      itemsPerPage,
+      totalPages,
+      startItem,
+      endItem,
+      visiblePages,
+      // Métodos de paginación
+      nextPage,
+      previousPage,
+      goToPage,
+      resetPagination,
+      // Métodos existentes
       cancelarCita,
-      formatFecha
+      formatFecha,
+      t
     }
   }
 }
 </script>
 
 <style scoped>
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-info {
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-pagination {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  background: white;
+  color: #5a5a5a;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+  min-width: 40px;
+  text-align: center;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  background: #f8c8dc;
+  border-color: #f8c8dc;
+  color: white;
+}
+
+.btn-pagination:disabled {
+  background: #f5f5f5;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-pagination.active {
+  background: #ff6b95;
+  border-color: #ff6b95;
+  color: white;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.items-per-page {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.items-per-page select {
+  padding: 0.4rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: white;
+}
+
 .page-header {
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
   padding: 2rem 0;
@@ -197,28 +400,6 @@ export default {
 
 .content-section {
   padding: 2rem 0;
-}
-
-#form-cancelar-cita {
-  display: flex;
-  justify-content: center;
-  align-items: end;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.label-cancelar {
-  margin-right: 1rem;
-  font-weight: 600;
-  color: #5a5a5a;
-}
-
-#carnet-cancelar-cita {
-  width: 300px;
-  padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1rem;
 }
 
 .citas-container {
@@ -274,28 +455,195 @@ export default {
   font-weight: 600;
 }
 
-.no-result {
+/* Botón de cancelar individual - MEJORADO */
+.btn-cancelar {
+  padding: 0.4rem 0.8rem;
+  background: #ff6b95;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.btn-cancelar:hover:not(:disabled) {
+  background: #ff4d7a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 107, 149, 0.3);
+}
+
+.btn-cancelar:disabled {
+  background: #a0a0a0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Estilos para cuando no hay citas */
+.no-appointments {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.no-appointments-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.no-appointments-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.no-appointments h3 {
+  color: #5a5a5a;
+  margin-bottom: 1rem;
+}
+
+.no-appointments p {
+  color: #666;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.loading {
   text-align: center;
   padding: 2rem;
-  color: #6c757d;
+  color: #666;
   font-style: italic;
 }
 
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  margin-top: 2rem;
+/* Mensaje de resultado */
+.resultado-message {
+  padding: 1rem;
+  border-radius: 5px;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.resultado-message.exito {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.resultado-message.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.resultado-message.info {
+  background: #cce7ff;
+  color: #004085;
+  border: 1px solid #b3d7ff;
 }
 
 @media (max-width: 768px) {
-  #form-cancelar-cita {
+  .pagination-controls {
     flex-direction: column;
-    align-items: stretch;
+    text-align: center;
+    gap: 1rem;
   }
 
-  #carnet-cancelar-cita {
+  .pagination-buttons {
+    order: 1;
+  }
+
+  .pagination-info {
+    order: 2;
+  }
+
+  .items-per-page {
+    order: 3;
+  }
+
+  .btn-pagination {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    min-width: 35px;
+  }
+
+  .page-numbers {
+    gap: 0.1rem;
+  }
+
+  .citas-container {
+    padding: 1.5rem;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .btn-cancelar {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+    min-width: 70px;
+  }
+
+  .no-appointments {
+    padding: 1.5rem;
+    min-height: 250px;
+  }
+
+  .no-appointments-icon {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagination-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .page-numbers {
+    order: -1;
     width: 100%;
-    margin-bottom: 1rem;
+    justify-content: center;
+  }
+
+  .btn-pagination {
+    width: 100%;
+    max-width: 120px;
+  }
+
+  .citas-container {
+    padding: 1rem;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .btn-cancelar {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.7rem;
+    min-width: 65px;
+  }
+
+  .no-appointments {
+    padding: 1rem;
+    min-height: 200px;
+  }
+
+  .no-appointments-icon {
+    font-size: 2.5rem;
   }
 }
 </style>
