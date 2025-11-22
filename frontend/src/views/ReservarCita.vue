@@ -268,30 +268,31 @@ export default {
 <style scoped>
 .page-header {
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
-  padding: 2rem 0;
+  padding: clamp(1rem, 4vw, 2rem) 0;
   text-align: center;
 }
 
 .page-header h2 {
   color: #5a5a5a;
   margin-bottom: 0.5rem;
+  font-size: clamp(1.5rem, 5vw, 2rem);
 }
 
 .content-section {
-  padding: 2rem 0;
+  padding: clamp(1rem, 3vw, 2rem) 0;
 }
 
 .form {
-  max-width: 600px;
+  max-width: min(600px, 95vw);
   margin: 0 auto;
   background: white;
-  padding: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 3vw, 1.5rem);
 }
 
 .form-group label {
@@ -299,15 +300,16 @@ export default {
   margin-bottom: 0.5rem;
   font-weight: 600;
   color: #5a5a5a;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
 }
 
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 0.8rem;
+  padding: clamp(0.6rem, 2vw, 0.8rem);
   border: 1px solid #ddd;
   border-radius: 5px;
-  font-size: 1rem;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
   transition: border-color 0.3s;
 }
 
@@ -326,14 +328,46 @@ export default {
 
 .form-actions {
   display: flex;
-  gap: 1rem;
+  gap: clamp(0.5rem, 2vw, 1rem);
   justify-content: center;
-  margin-top: 2rem;
+  margin-top: clamp(1rem, 3vw, 2rem);
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: clamp(0.6rem, 2vw, 0.8rem) clamp(1rem, 3vw, 1.5rem);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  font-weight: 600;
+  transition: all 0.3s;
+  min-width: max-content;
+  flex: 1;
+  max-width: 200px;
+}
+
+.btn-primary {
+  background: #ff6b95;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #e55a82;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
 }
 
 .resultado {
-  margin-top: 2rem;
-  padding: 1.5rem;
+  margin-top: clamp(1rem, 3vw, 2rem);
+  padding: clamp(1rem, 3vw, 1.5rem);
   border-radius: 10px;
   text-align: center;
   font-weight: 600;
@@ -352,15 +386,16 @@ export default {
 }
 
 .detalles {
-  margin-top: 1rem;
-  padding: 1rem;
+  margin-top: clamp(0.75rem, 2vw, 1rem);
+  padding: clamp(0.75rem, 2vw, 1rem);
   background: rgba(255, 255, 255, 0.5);
   border-radius: 5px;
 }
 
 .detalles h4 {
-  margin-bottom: 1rem;
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
   color: #5a5a5a;
+  font-size: clamp(1rem, 3vw, 1.1rem);
 }
 
 .detalles ul {
@@ -370,16 +405,16 @@ export default {
 .detalles li {
   margin-bottom: 0.5rem;
   padding: 0.25rem 0;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 360px) {
   .form-actions {
     flex-direction: column;
   }
 
-  .resultado {
-    padding: 1rem;
-    margin: 1rem 0;
+  .btn {
+    min-width: 100%;
   }
 }
 </style>

@@ -301,33 +301,44 @@ export default {
 </script>
 
 <style scoped>
+/* Variables fluidas */
+:root {
+  --spacing-min: 0.5rem;
+  --spacing-max: 2rem;
+  --font-min: 0.875rem;
+  --font-max: 1.125rem;
+  --heading-min: 1.5rem;
+  --heading-max: 2rem;
+}
+
 .page-header {
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
-  padding: 2rem 0;
+  padding: clamp(1rem, 4vw, 3rem) 0;
   text-align: center;
 }
 
 .page-header h2 {
   color: #5a5a5a;
   margin-bottom: 0.5rem;
+  font-size: clamp(var(--heading-min), 5vw, var(--heading-max));
 }
 
 .content-section {
-  padding: 2rem 0;
+  padding: clamp(1rem, 3vw, 2rem) 0;
 }
 
 .form {
-  max-width: 800px;
+  max-width: min(800px, 95vw);
   margin: 0 auto;
   background: white;
-  padding: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 3vw, 2rem);
+  padding-bottom: clamp(0.75rem, 2vw, 1.5rem);
   border-bottom: 1px solid #eee;
 }
 
@@ -337,22 +348,18 @@ export default {
 
 .form-section h3 {
   color: #5a5a5a;
-  margin-bottom: 1rem;
-  font-size: 1.2rem;
+  margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
+  font-size: clamp(1rem, 3vw, 1.2rem);
 }
 
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: clamp(0.5rem, 2vw, 1rem);
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
-}
-
-#observaciones-paquete {
-  resize: none;
+  margin-bottom: clamp(0.75rem, 2vw, 1.5rem);
 }
 
 .form-group label {
@@ -360,16 +367,17 @@ export default {
   margin-bottom: 0.5rem;
   font-weight: 600;
   color: #5a5a5a;
+  font-size: clamp(var(--font-min), 2vw, var(--font-max));
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 0.8rem;
+  padding: clamp(0.6rem, 2vw, 0.8rem);
   border: 1px solid #ddd;
   border-radius: 5px;
-  font-size: 1rem;
+  font-size: clamp(var(--font-min), 2vw, 1rem);
   transition: border-color 0.3s;
 }
 
@@ -389,14 +397,47 @@ export default {
 
 .form-actions {
   display: flex;
-  gap: 1rem;
+  gap: clamp(0.5rem, 2vw, 1rem);
   justify-content: center;
-  margin-top: 2rem;
+  margin-top: clamp(1rem, 3vw, 2rem);
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: clamp(0.6rem, 2vw, 0.8rem) clamp(1rem, 3vw, 1.5rem);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(var(--font-min), 2vw, var(--font-max));
+  font-weight: 600;
+  transition: all 0.3s;
+  min-width: max-content;
+  flex: 1;
+  max-width: 200px;
+}
+
+.btn-primary {
+  background: #ff6b95;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #e55a82;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
 }
 
 .resultado {
-  margin-top: 2rem;
-  padding: 1rem;
+  margin-top: clamp(1rem, 3vw, 2rem);
+  padding: clamp(0.75rem, 2vw, 1rem);
   border-radius: 5px;
   text-align: center;
   font-weight: 600;
@@ -414,13 +455,14 @@ export default {
   border: 1px solid #f5c6cb;
 }
 
-@media (max-width: 768px) {
+/* Ajustes específicos para móviles muy pequeños */
+@media (max-width: 360px) {
   .form-row {
     grid-template-columns: 1fr;
   }
 
-  .form-actions {
-    flex-direction: column;
+  .btn {
+    min-width: 100%;
   }
 }
 </style>

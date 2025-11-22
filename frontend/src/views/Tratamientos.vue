@@ -465,36 +465,38 @@ export default {
 </script>
 
 <style scoped>
-/* ESTILOS MEJORADOS PARA LA TABLA DEL ADMINISTRADOR */
+/* ESTILOS FLUIDOS MEJORADOS */
 .table-container {
   background: white;
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  margin-bottom: 2rem;
+  margin-bottom: clamp(1rem, 3vw, 2rem);
   overflow-x: auto;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 800px;
+  min-width: min(800px, 100%);
 }
 
 .data-table th {
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
   color: #5a5a5a;
   font-weight: 600;
-  padding: 1rem;
+  padding: clamp(0.5rem, 2vw, 1rem);
   text-align: left;
   border-bottom: 2px solid #dee2e6;
   position: relative;
+  font-size: clamp(0.8rem, 2vw, 1rem);
 }
 
 .data-table td {
-  padding: 1rem;
+  padding: clamp(0.5rem, 2vw, 1rem);
   border-bottom: 1px solid #eee;
   vertical-align: middle;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 
 .data-table tbody tr:hover {
@@ -523,10 +525,10 @@ export default {
 }
 
 .categoria-tag {
-  padding: 0.25rem 0.75rem;
+  padding: clamp(0.2rem, 1vw, 0.25rem) clamp(0.5rem, 2vw, 0.75rem);
   border-radius: 15px;
   color: #5a5a5a;
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 2vw, 0.8rem);
   font-weight: 600;
   display: inline-block;
   text-align: center;
@@ -535,37 +537,39 @@ export default {
 
 .precio {
   color: #ff6b95;
-  font-size: 1.1rem;
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
   font-weight: 600;
 }
 
 .descripcion-cell {
   color: #666;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
   line-height: 1.4;
-  max-width: 250px;
+  max-width: min(250px, 100%);
 }
 
 .acciones-cell {
   display: flex;
-  gap: 0.5rem;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
   justify-content: center;
   align-items: center;
-  min-width: 120px;
+  min-width: min(120px, 100%);
+  flex-wrap: wrap;
 }
 
-/* BOTONES MEJORADOS */
+/* BOTONES FLUIDOS */
 .btn {
-  padding: 0.5rem 1rem;
+  padding: clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem);
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: clamp(0.75rem, 2vw, 0.85rem);
   font-weight: 600;
   transition: all 0.3s ease;
   text-decoration: none;
   display: inline-block;
   text-align: center;
+  min-width: max-content;
 }
 
 .btn-primary {
@@ -573,47 +577,35 @@ export default {
   color: white;
 }
 
+.btn-eliminar {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+  padding: clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
 .btn-primary:hover {
   background: #e55a82;
   transform: translateY(-1px);
 }
 
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #5a6268;
-}
-
 .btn-small {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.8rem;
+  padding: clamp(0.3rem, 1.5vw, 0.4rem) clamp(0.6rem, 2vw, 0.8rem);
+  font-size: clamp(0.7rem, 2vw, 0.8rem);
 }
 
-.btn-eliminar {
-  background-color: #f44336;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-eliminar:hover {
-  background-color: #da190b;
-  transform: translateY(-1px);
-}
-
-/* ESTILOS MEJORADOS PARA TARJETAS DE CLIENTE */
+/* ESTILOS PARA TARJETAS FLUIDAS */
 .tarjetas-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: clamp(1rem, 3vw, 1.5rem);
+  margin-bottom: clamp(1rem, 3vw, 2rem);
 }
 
 .tarjeta-tratamiento {
@@ -634,21 +626,21 @@ export default {
 }
 
 .contenido-tratamiento {
-  padding: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  gap: 1rem;
+  gap: clamp(0.5rem, 2vw, 1rem);
 }
 
 .tarjeta-header {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: clamp(0.5rem, 2vw, 0.75rem);
 }
 
 .tratamiento-nombre {
-  font-size: 1.25rem;
+  font-size: clamp(1rem, 4vw, 1.25rem);
   font-weight: 700;
   color: #5a5a5a;
   margin: 0;
@@ -657,7 +649,7 @@ export default {
 
 .descripcion {
   color: #666;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
   line-height: 1.5;
   flex-grow: 1;
   margin: 0;
@@ -670,8 +662,8 @@ export default {
 .tarjeta-info {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem 0;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
+  padding: clamp(0.5rem, 2vw, 1rem) 0;
   border-top: 1px solid #f0f0f0;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -683,67 +675,67 @@ export default {
 }
 
 .info-label {
-  font-size: 0.85rem;
+  font-size: clamp(0.75rem, 2vw, 0.85rem);
   color: #888;
   font-weight: 500;
 }
 
 .info-value {
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
   color: #5a5a5a;
   font-weight: 600;
 }
 
 .tarjeta-actions {
   margin-top: auto;
-  padding-top: 1rem;
+  padding-top: clamp(0.5rem, 2vw, 1rem);
 }
 
 .btn-reservar {
   width: 100%;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.9rem;
+  padding: clamp(0.6rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
+  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
   font-weight: 600;
 }
 
-/* ESTILOS GENERALES MEJORADOS */
+/* PAGINACIÓN FLUIDA */
 .pagination-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 1.5rem 0;
-  padding: 1rem;
+  margin: clamp(1rem, 3vw, 1.5rem) 0;
+  padding: clamp(0.75rem, 2vw, 1rem);
   background: white;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: clamp(0.5rem, 2vw, 1rem);
 }
 
 .pagination-info {
   color: #666;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
   font-weight: 500;
 }
 
 .pagination-buttons {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
   flex-wrap: wrap;
   justify-content: center;
 }
 
 .btn-pagination {
-  padding: 0.5rem 1rem;
+  padding: clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem);
   border: 1px solid #ddd;
   background: white;
   color: #5a5a5a;
   border-radius: 5px;
   cursor: pointer;
   transition: all 0.3s;
-  font-size: 0.9rem;
-  min-width: 40px;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  min-width: clamp(35px, 8vw, 40px);
   text-align: center;
 }
 
@@ -767,44 +759,31 @@ export default {
 
 .page-numbers {
   display: flex;
-  gap: 0.25rem;
+  gap: clamp(0.1rem, 1vw, 0.25rem);
 }
 
 .items-per-page {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 
 .items-per-page select {
-  padding: 0.4rem;
+  padding: clamp(0.3rem, 1.5vw, 0.4rem);
   border: 1px solid #ddd;
   border-radius: 5px;
   background: white;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 
-.page-header {
-  background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
-  padding: 2rem 0;
-  text-align: center;
-}
-
-.page-header h2 {
-  color: #5a5a5a;
-  margin-bottom: 0.5rem;
-}
-
-.content-section {
-  padding: 2rem 0;
-}
-
+/* FILTROS FLUIDOS */
 .filtros-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: clamp(0.75rem, 2vw, 1rem);
+  margin-bottom: clamp(1rem, 3vw, 2rem);
+  padding: clamp(1rem, 3vw, 1.5rem);
   background: white;
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
@@ -819,15 +798,15 @@ export default {
   font-weight: 600;
   color: #5a5a5a;
   margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 
 .filtro-select,
 .filtro-busqueda {
-  padding: 0.6rem;
+  padding: clamp(0.5rem, 2vw, 0.6rem);
   border: 1px solid #ddd;
   border-radius: 5px;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
   transition: border-color 0.3s;
 }
 
@@ -837,16 +816,17 @@ export default {
   border-color: #a2d2ff;
 }
 
+/* ESTADÍSTICAS FLUIDAS */
 .estadisticas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: clamp(0.75rem, 2vw, 1rem);
+  margin-bottom: clamp(1rem, 3vw, 2rem);
 }
 
 .estadistica-card {
   background: white;
-  padding: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
   border-radius: 10px;
   text-align: center;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
@@ -854,7 +834,7 @@ export default {
 }
 
 .estadistica-valor {
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 6vw, 2rem);
   font-weight: 700;
   color: #ff6b95;
   margin-bottom: 0.5rem;
@@ -862,86 +842,118 @@ export default {
 
 .estadistica-label {
   color: #666;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+}
+
+/* ESTILOS GENERALES FLUIDOS */
+.page-header {
+  background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
+  padding: clamp(1rem, 4vw, 2rem) 0;
+  text-align: center;
+}
+
+.page-header h2 {
+  color: #5a5a5a;
+  margin-bottom: 0.5rem;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+}
+
+.content-section {
+  padding: clamp(1rem, 3vw, 2rem) 0;
 }
 
 .no-resultados {
   text-align: center;
-  padding: 3rem;
+  padding: clamp(1.5rem, 5vw, 3rem);
   background: white;
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  margin: 2rem 0;
+  margin: clamp(1rem, 3vw, 2rem) 0;
 }
 
 .no-resultados p {
   margin-bottom: 1rem;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 3vw, 1.1rem);
   color: #666;
 }
 
-/* RESPONSIVE MEJORADO */
-@media (max-width: 768px) {
-  .filtros-container {
-    grid-template-columns: 1fr;
-  }
+/* AJUSTES PARA DISPOSITIVOS MUY PEQUEÑOS */
+@media (max-width: 360px) {
 
-  .tarjetas-container {
-    grid-template-columns: 1fr;
-  }
-
-  .pagination-controls {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .data-table {
-    font-size: 0.8rem;
-  }
-
-  .data-table th,
-  .data-table td {
-    padding: 0.5rem;
+  .page-numbers {
+    order: -1;
   }
 
   .acciones-cell {
     flex-direction: column;
-    gap: 0.25rem;
   }
 
-  .btn-small {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.75rem;
+  /* PAGINACIÓN FLUIDA MEJORADA */
+  .pagination-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.75rem, 2vw, 1rem);
+    margin: clamp(1rem, 3vw, 1.5rem) 0;
+    padding: clamp(0.75rem, 2vw, 1rem);
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
   }
 
-  .btn-eliminar {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.75rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .page-header {
-    padding: 1.5rem 0;
-  }
-
-  .content-section {
-    padding: 1rem 0;
-  }
-
-  .estadisticas {
-    grid-template-columns: 1fr;
+  .pagination-info {
+    color: #666;
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    font-weight: 500;
+    order: 1;
   }
 
   .pagination-buttons {
+    display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    align-items: center;
+    gap: clamp(0.5rem, 2vw, 0.75rem);
+    order: 3;
+    width: 100%;
+  }
+
+  .pagination-nav {
+    display: flex;
+    gap: clamp(0.5rem, 2vw, 1rem);
+    justify-content: center;
+    width: 100%;
   }
 
   .page-numbers {
-    order: -1;
-    width: 100%;
+    display: flex;
+    gap: clamp(0.1rem, 1vw, 0.25rem);
     justify-content: center;
+    flex-wrap: wrap;
+    margin: clamp(0.25rem, 1vw, 0.5rem) 0;
   }
+
+  .btn-pagination {
+    padding: clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.6rem, 1.5vw, 0.8rem);
+    border: 1px solid #ddd;
+    background: white;
+    color: #5a5a5a;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: clamp(0.75rem, 1.8vw, 0.85rem);
+    min-width: clamp(32px, 7vw, 38px);
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .items-per-page {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.25rem, 1vw, 0.5rem);
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    order: 2;
+  }
+
 }
 </style>

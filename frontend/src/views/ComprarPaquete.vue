@@ -35,7 +35,7 @@
                 </option>
               </select>
               <span v-if="fieldErrors.paqueteSeleccionado" class="error-message">{{ fieldErrors.paqueteSeleccionado
-              }}</span>
+                }}</span>
 
               <!-- Información del Paquete Seleccionado -->
               <div v-if="formData.paqueteSeleccionado" class="paquete-info">
@@ -91,7 +91,7 @@
                   <strong>{{ $t('buyPackage.totalPrice', { amount: calcularPrecioTotal() }) }}</strong>
                   <br>
                   <strong>{{ $t('buyPackage.totalDuration', { minutes: calcularDuracionTotalPersonalizado() })
-                  }}</strong>
+                    }}</strong>
                 </div>
               </div>
             </div>
@@ -403,32 +403,32 @@ export default {
 <style scoped>
 .page-header {
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
-  padding: 2rem 0;
+  padding: clamp(1rem, 4vw, 2rem) 0;
   text-align: center;
 }
 
 .page-header h2 {
   color: #5a5a5a;
   margin-bottom: 0.5rem;
-  font-size: 1.8rem;
+  font-size: clamp(1.3rem, 5vw, 1.8rem);
 }
 
 .content-section {
-  padding: 2rem 0;
+  padding: clamp(1rem, 3vw, 2rem) 0;
 }
 
 .form {
-  max-width: 800px;
+  max-width: min(800px, 95vw);
   margin: 0 auto;
   background: white;
-  padding: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 3vw, 2rem);
+  padding-bottom: clamp(0.75rem, 2vw, 1.5rem);
   border-bottom: 1px solid #eee;
 }
 
@@ -438,12 +438,12 @@ export default {
 
 .form-section h3 {
   color: #5a5a5a;
-  margin-bottom: 1rem;
-  font-size: 1.2rem;
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+  font-size: clamp(1rem, 3vw, 1.2rem);
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 3vw, 1.5rem);
 }
 
 .form-group label {
@@ -451,23 +451,23 @@ export default {
   margin-bottom: 0.5rem;
   font-weight: 600;
   color: #5a5a5a;
-  font-size: 0.95rem;
+  font-size: clamp(0.9rem, 2.5vw, 0.95rem);
 }
 
 .label-fecha {
   font-weight: 400 !important;
   color: #666 !important;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
   font-style: italic;
 }
 
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 0.8rem;
+  padding: clamp(0.6rem, 2vw, 0.8rem);
   border: 1px solid #ddd;
   border-radius: 5px;
-  font-size: 1rem;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
   transition: border-color 0.3s;
 }
 
@@ -486,19 +486,19 @@ export default {
 
 .checkbox-group {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+  gap: clamp(0.5rem, 2vw, 0.75rem);
   margin-top: 0.5rem;
 }
 
 .checkbox-item {
   display: flex;
   align-items: center;
-  padding: 0.5rem;
+  padding: clamp(0.4rem, 1.5vw, 0.5rem);
   background: #f8f9fa;
   border-radius: 5px;
   transition: background-color 0.3s;
-  font-size: 0.9rem;
+  font-size: clamp(0.85rem, 2.5vw, 0.9rem);
 }
 
 .checkbox-item:hover {
@@ -513,25 +513,25 @@ export default {
 
 .paquete-info,
 .paquete-personalizado-info {
-  margin-top: 1rem;
-  padding: 1rem;
+  margin-top: clamp(0.75rem, 2vw, 1rem);
+  padding: clamp(0.75rem, 2vw, 1rem);
   background: #f8f9fa;
   border-radius: 5px;
   border-left: 4px solid #a2d2ff;
-  font-size: 0.9rem;
+  font-size: clamp(0.85rem, 2.5vw, 0.9rem);
 }
 
 .paquete-info h4,
 .paquete-personalizado-info h4 {
   color: #5a5a5a;
   margin-bottom: 0.5rem;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 3vw, 1.1rem);
 }
 
 .tratamientos-lista h5 {
-  margin: 1rem 0 0.5rem 0;
+  margin: clamp(0.75rem, 2vw, 1rem) 0 0.5rem 0;
   color: #5a5a5a;
-  font-size: 0.9rem;
+  font-size: clamp(0.85rem, 2.5vw, 0.9rem);
 }
 
 .tratamientos-lista ul {
@@ -543,7 +543,7 @@ export default {
 .tratamientos-lista li {
   padding: 0.25rem 0;
   border-bottom: 1px solid #eee;
-  font-size: 0.875rem;
+  font-size: clamp(0.8rem, 2.5vw, 0.875rem);
 }
 
 .tratamientos-lista li:last-child {
@@ -551,33 +551,65 @@ export default {
 }
 
 .precio-total {
-  margin-top: 1rem;
-  padding-top: 1rem;
+  margin-top: clamp(0.75rem, 2vw, 1rem);
+  padding-top: clamp(0.75rem, 2vw, 1rem);
   border-top: 2px solid #dee2e6;
   text-align: right;
   color: #ff6b95;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 3vw, 1.1rem);
 }
 
 .form-actions {
   display: flex;
-  gap: 1rem;
+  gap: clamp(0.5rem, 2vw, 1rem);
   justify-content: center;
-  margin-top: 2rem;
+  margin-top: clamp(1rem, 3vw, 2rem);
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: clamp(0.6rem, 2vw, 0.8rem) clamp(1rem, 3vw, 1.5rem);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  font-weight: 600;
+  transition: all 0.3s;
+  min-width: max-content;
+  flex: 1;
+  max-width: 200px;
+}
+
+.btn-primary {
+  background: #ff6b95;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #e55a82;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
 }
 
 .detalles-compra {
-  margin-top: 1rem;
-  padding: 1rem;
+  margin-top: clamp(0.75rem, 2vw, 1rem);
+  padding: clamp(0.75rem, 2vw, 1rem);
   background: rgba(255, 255, 255, 0.5);
   border-radius: 5px;
-  font-size: 0.9rem;
+  font-size: clamp(0.85rem, 2.5vw, 0.9rem);
 }
 
 .detalles-compra h4 {
-  margin-bottom: 1rem;
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
   color: #5a5a5a;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 3vw, 1.1rem);
 }
 
 .detalles-compra ul {
@@ -588,95 +620,45 @@ export default {
 .detalles-compra li {
   margin-bottom: 0.5rem;
   padding: 0.25rem 0;
-  font-size: 0.9rem;
+  font-size: clamp(0.85rem, 2.5vw, 0.9rem);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .page-header {
-    padding: 1.5rem 0;
-  }
+.resultado {
+  margin-top: clamp(1rem, 3vw, 2rem);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 600;
+}
 
-  .page-header h2 {
-    font-size: 1.5rem;
-  }
+.resultado.exito {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
 
-  .content-section {
-    padding: 1rem 0;
-  }
+.resultado.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
 
-  .form {
-    padding: 1.5rem;
-    margin: 0 10px;
-  }
-
-  .form-section {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-  }
-
-  .form-section h3 {
-    font-size: 1.1rem;
-  }
-
+/* AJUSTES PARA DISPOSITIVOS MUY PEQUEÑOS */
+@media (max-width: 360px) {
   .checkbox-group {
     grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-
-  .checkbox-item {
-    padding: 0.4rem;
-    font-size: 0.85rem;
   }
 
   .form-actions {
     flex-direction: column;
-    gap: 0.8rem;
+  }
+
+  .btn {
+    min-width: 100%;
   }
 
   .precio-total {
     text-align: center;
-    font-size: 1rem;
-  }
-
-  .paquete-info,
-  .paquete-personalizado-info {
-    padding: 0.8rem;
-    font-size: 0.85rem;
-  }
-
-  .detalles-compra {
-    padding: 0.8rem;
-    font-size: 0.85rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .form {
-    padding: 1rem;
-    margin: 0 5px;
-  }
-
-  .page-header h2 {
-    font-size: 1.3rem;
-  }
-
-  .form-section h3 {
-    font-size: 1rem;
-  }
-
-  .form-group input,
-  .form-group select {
-    padding: 0.7rem;
-    font-size: 0.9rem;
-  }
-
-  .checkbox-item {
-    font-size: 0.8rem;
-  }
-
-  .precio-total {
-    font-size: 0.9rem;
   }
 }
 </style>

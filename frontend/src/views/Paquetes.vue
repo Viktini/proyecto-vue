@@ -45,7 +45,7 @@
                 </div>
                 <div class="paquete-duracion">
                   <strong>{{ $t('packages.totalDuration', { minutes: calcularDuracionTotal(paquete.tratamientos) })
-                    }}</strong>
+                  }}</strong>
                 </div>
                 <div class="paquete-ahorro" v-if="calcularAhorro(paquete) > 0">
                   <span class="ahorro-tag">{{ $t('packages.youSave', { amount: calcularAhorro(paquete) }) }}</span>
@@ -384,31 +384,31 @@ export default {
 <style scoped>
 .page-header {
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
-  padding: 2rem 0;
+  padding: clamp(1rem, 4vw, 2rem) 0;
   text-align: center;
 }
 
 .page-header h2 {
   color: #5a5a5a;
   margin-bottom: 0.5rem;
-  font-size: 1.8rem;
+  font-size: clamp(1.3rem, 5vw, 1.8rem);
 }
 
 .content-section {
-  padding: 2rem 0;
+  padding: clamp(1rem, 3vw, 2rem) 0;
 }
 
 /* Información de paginación superior */
 .pagination-info-top {
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 3vw, 1.5rem);
   color: #666;
-  font-size: 0.9rem;
+  font-size: clamp(0.85rem, 2.5vw, 0.9rem);
 }
 
 .pagination-info-top p {
   margin: 0;
-  padding: 0.5rem;
+  padding: clamp(0.4rem, 1.5vw, 0.5rem);
   background: #f8f9fa;
   border-radius: 5px;
   display: inline-block;
@@ -416,9 +416,9 @@ export default {
 
 .paquetes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  gap: clamp(1rem, 3vw, 2rem);
+  margin-bottom: clamp(1rem, 3vw, 2rem);
 }
 
 .paquete-card {
@@ -429,7 +429,7 @@ export default {
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  min-height: 500px;
+  min-height: min(450px, 80vw);
 }
 
 .paquete-card:hover {
@@ -439,30 +439,30 @@ export default {
 
 .paquete-header {
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
-  padding: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
   text-align: center;
   position: relative;
 }
 
 .paquete-header h3 {
   color: #5a5a5a;
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
 }
 
 .paquete-precio {
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 6vw, 2rem);
   font-weight: 700;
   color: #ff6b95;
   background: white;
-  padding: 0.5rem 1rem;
+  padding: clamp(0.4rem, 2vw, 0.5rem) clamp(0.8rem, 3vw, 1rem);
   border-radius: 25px;
   display: inline-block;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .paquete-body {
-  padding: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -470,20 +470,21 @@ export default {
 
 .paquete-descripcion {
   color: #666;
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 3vw, 1.5rem);
   font-style: italic;
   text-align: center;
-  font-size: 0.95rem;
+  font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+  line-height: 1.5;
 }
 
 .paquete-tratamientos {
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 3vw, 1.5rem);
 }
 
 .paquete-tratamientos h4 {
   color: #5a5a5a;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+  font-size: clamp(0.95rem, 3vw, 1.1rem);
   border-bottom: 2px solid #f8c8dc;
   padding-bottom: 0.5rem;
 }
@@ -495,11 +496,11 @@ export default {
 }
 
 .paquete-tratamientos li {
-  padding: 0.5rem 0;
+  padding: clamp(0.4rem, 1.5vw, 0.5rem) 0;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: clamp(0.85rem, 2.5vw, 0.9rem);
 }
 
 .paquete-tratamientos li:before {
@@ -515,77 +516,96 @@ export default {
 
 .paquete-duracion {
   margin-top: auto;
-  padding-top: 1rem;
+  padding-top: clamp(0.75rem, 2vw, 1rem);
   border-top: 2px solid #f0f0f0;
   text-align: center;
   color: #5a5a5a;
-  font-size: 0.95rem;
+  font-size: clamp(0.85rem, 2.5vw, 0.95rem);
 }
 
 .paquete-ahorro {
-  margin-top: 1rem;
+  margin-top: clamp(0.75rem, 2vw, 1rem);
   text-align: center;
 }
 
 .paquete-ahorro-vacio {
-  height: 2rem;
+  height: clamp(1.5rem, 4vw, 2rem);
 }
 
 .ahorro-tag {
   background-color: #f0f0f0;
   color: #444;
-  padding: 0.3rem 0.8rem;
+  padding: clamp(0.25rem, 1.5vw, 0.3rem) clamp(0.6rem, 2vw, 0.8rem);
   border-radius: 10px;
   font-weight: 500;
-  font-size: 0.85rem;
+  font-size: clamp(0.8rem, 2.5vw, 0.85rem);
   display: inline-block;
   border: 1px solid #ddd;
 }
 
 .paquete-footer {
-  padding: 1.5rem 2rem;
+  padding: clamp(1rem, 3vw, 1.5rem) clamp(1rem, 3vw, 2rem);
   background: #f8f9fa;
   text-align: center;
 }
 
-/* CONTROLES DE PAGINACIÓN (igual que Tratamientos.vue) */
+.btn {
+  padding: clamp(0.6rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  font-weight: 600;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+  background: #ff6b95;
+  color: white;
+}
+
+.btn:hover {
+  background: #e55a82;
+  transform: translateY(-2px);
+}
+
+/* CONTROLES DE PAGINACIÓN FLUIDOS */
 .pagination-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 1.5rem 0;
-  padding: 1rem;
+  margin: clamp(1rem, 3vw, 1.5rem) 0;
+  padding: clamp(0.75rem, 2vw, 1rem);
   background: white;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: clamp(0.5rem, 2vw, 1rem);
 }
 
 .pagination-info {
   color: #666;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
   font-weight: 500;
 }
 
 .pagination-buttons {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
   flex-wrap: wrap;
   justify-content: center;
 }
 
 .btn-pagination {
-  padding: 0.5rem 1rem;
+  padding: clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem);
   border: 1px solid #ddd;
   background: white;
   color: #5a5a5a;
   border-radius: 5px;
   cursor: pointer;
   transition: all 0.3s;
-  font-size: 0.9rem;
-  min-width: 40px;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  min-width: clamp(35px, 8vw, 40px);
   text-align: center;
 }
 
@@ -609,31 +629,32 @@ export default {
 
 .page-numbers {
   display: flex;
-  gap: 0.25rem;
+  gap: clamp(0.1rem, 1vw, 0.25rem);
 }
 
 .items-per-page {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 
 .items-per-page select {
-  padding: 0.4rem;
+  padding: clamp(0.3rem, 1.5vw, 0.4rem);
   border: 1px solid #ddd;
   border-radius: 5px;
   background: white;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 
 .info-adicional {
-  max-width: 600px;
-  margin: 0 auto 3rem;
+  max-width: min(600px, 95vw);
+  margin: 0 auto clamp(1rem, 4vw, 3rem);
 }
 
 .info-card {
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
-  padding: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
   border-radius: 15px;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -641,167 +662,69 @@ export default {
 
 .info-card h3 {
   color: #5a5a5a;
-  margin-bottom: 1rem;
-  font-size: 1.3rem;
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+  font-size: clamp(1.1rem, 3vw, 1.3rem);
 }
 
 .info-card p {
   color: #666;
-  margin-bottom: 1.5rem;
-  font-size: 0.95rem;
+  margin-bottom: clamp(1rem, 3vw, 1.5rem);
+  font-size: clamp(0.9rem, 2.5vw, 0.95rem);
+  line-height: 1.5;
+}
+
+.btn-link {
+  display: inline-block;
+  padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
+  background: #ff6b95;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: 600;
+  transition: all 0.3s;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+}
+
+.btn-link:hover {
+  background: #e55a82;
+  transform: translateY(-2px);
 }
 
 .loading-state,
 .empty-state {
   text-align: center;
-  padding: 3rem;
+  padding: clamp(1.5rem, 5vw, 3rem);
   background: white;
   border-radius: 15px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  margin: 2rem 0;
+  margin: clamp(1rem, 3vw, 2rem) 0;
 }
 
 .loading-state p {
   color: #666;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 3vw, 1.1rem);
 }
 
 .empty-state h3 {
   color: #5a5a5a;
-  margin-bottom: 1rem;
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+  font-size: clamp(1.1rem, 3vw, 1.3rem);
 }
 
 .empty-state p {
   color: #666;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-  .paquetes-grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .page-header {
-    padding: 1.5rem 0;
-  }
-
-  .page-header h2 {
-    font-size: 1.5rem;
-  }
-
-  .content-section {
-    padding: 1rem 0;
-  }
-
-  .paquetes-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-  }
-
+/* AJUSTES PARA DISPOSITIVOS MUY PEQUEÑOS */
+@media (max-width: 360px) {
   .pagination-controls {
     flex-direction: column;
     text-align: center;
-    gap: 1rem;
-  }
-
-  .pagination-buttons {
-    order: 1;
-  }
-
-  .pagination-info {
-    order: 2;
-  }
-
-  .items-per-page {
-    order: 3;
-  }
-
-  .paquete-header {
-    padding: 1.5rem;
-  }
-
-  .paquete-body {
-    padding: 1.5rem;
-    min-height: 350px;
-  }
-
-  .paquete-header h3 {
-    font-size: 1.3rem;
-  }
-
-  .paquete-precio {
-    font-size: 1.7rem;
-    padding: 0.4rem 0.8rem;
-  }
-
-  .info-card {
-    padding: 1.5rem;
-    margin: 0 10px;
-  }
-
-  .info-card h3 {
-    font-size: 1.2rem;
-  }
-
-  .btn-pagination {
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
-    min-width: 40px;
-  }
-}
-
-@media (max-width: 480px) {
-  .paquetes-grid {
-    gap: 1rem;
-  }
-
-  .paquete-card {
-    min-height: 450px;
-  }
-
-  .paquete-header {
-    padding: 1.2rem;
-  }
-
-  .paquete-body {
-    padding: 1.2rem;
-  }
-
-  .paquete-header h3 {
-    font-size: 1.2rem;
-  }
-
-  .paquete-precio {
-    font-size: 1.5rem;
-  }
-
-  .paquete-descripcion {
-    font-size: 0.9rem;
-  }
-
-  .paquete-tratamientos li {
-    font-size: 0.85rem;
-  }
-
-  .info-card {
-    padding: 1.2rem;
-  }
-
-  .info-card h3 {
-    font-size: 1.1rem;
-  }
-
-  .info-card p {
-    font-size: 0.9rem;
   }
 
   .pagination-buttons {
     flex-direction: column;
-    gap: 0.5rem;
   }
 
   .page-numbers {
@@ -813,6 +736,14 @@ export default {
   .btn-pagination {
     width: 100%;
     max-width: 120px;
+  }
+
+  .paquete-header {
+    padding: 1rem;
+  }
+
+  .paquete-body {
+    padding: 1rem;
   }
 }
 </style>

@@ -15,11 +15,9 @@
             <li><router-link to="/tratamientos">{{ $t('header.treatments') }}</router-link></li>
             <li><router-link to="/paquetes">{{ $t('header.packages') }}</router-link></li>
             <li v-if="isCliente">
-              <router-link to="/cancelar-cita">{{ $t('header.MyReservations') }}</router-link>
+              <router-link to="/mis-reservas">{{ $t('header.MyReservations') }}</router-link>
             </li>
-            <li v-if="isCliente">
-              <router-link to="/cancelar-paquete">{{ $t('header.MyPackages') }}</router-link>
-            </li>
+
             <!-- Eliminamos el enlace de usuario del menú principal -->
             <li v-if="isAdmin">
               <router-link to="/admin">{{ $t('header.adminPanel') }}</router-link>

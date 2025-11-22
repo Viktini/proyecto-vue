@@ -4,8 +4,7 @@
         "home": "Home",
         "treatments": "Treatments",
         "packages": "Packages",
-        "MyReservations": "My Appointments",
-        "MyPackages": "My Packages",
+        "MyReservations": "My Reservations",
         "user": "User",
         "adminPanel": "Admin Panel",
         "logout": "Logout"
@@ -93,9 +92,14 @@
         "noAppointments": "No reserved appointments",
         "noPackages": "No purchased packages"
     },
+    "myReservations": {
+        "title": "My Reservationes",
+        "subtitle": "Management of your reservations",
+        "appointments": "Your appointments",
+        "packages": "Your packages"
+    },
     "cancelAppointment": {
-        "title": "My Appointments",
-        "yourAppointments": "Your Appointments",
+        "reservedAppointments": "Reserved appointments",
         "date": "Date",
         "time": "Time",
         "treatment": "Treatment",
@@ -119,8 +123,7 @@
         }
     },
     "cancelPackage": {
-        "title": "My Packages",
-        "yourPackages": "Your Packages",
+        "reservedPackages": "Reserved packages",
         "packageNumber": "N° {number}",
         "startDate": "Start date:",
         "includedTreatments": "Included treatments:",

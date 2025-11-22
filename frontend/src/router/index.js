@@ -9,8 +9,7 @@ import Tratamientos from '../views/Tratamientos.vue'
 import Paquetes from '../views/Paquetes.vue'
 import ReservarCita from '../views/ReservarCita.vue'
 import ComprarPaquete from '../views/ComprarPaquete.vue'
-import CancelarCita from '../views/CancelarCita.vue'
-import CancelarPaquete from '../views/CancelarPaquete.vue'
+import MisReservas from '../views/MisReservas.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import DatosUsuario from '../views/DatosUsuario.vue'
 
@@ -56,15 +55,9 @@ const routes = [
     meta: { requiresAuth: true, role: 'cliente' }
   },
   {
-    path: '/cancelar-cita',
-    name: 'CancelarCita',
-    component: CancelarCita,
-    meta: { requiresAuth: true, role: 'cliente' }
-  },
-  {
-    path: '/cancelar-paquete',
-    name: 'CancelarPaquete',
-    component: CancelarPaquete,
+    path: '/mis-reservas',
+    name: 'MisReservas',
+    component: MisReservas,
     meta: { requiresAuth: true, role: 'cliente' }
   },
   {

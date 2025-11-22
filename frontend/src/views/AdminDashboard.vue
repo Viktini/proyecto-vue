@@ -482,39 +482,39 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 1.5rem 0;
-  padding: 1rem;
+  margin: clamp(1rem, 3vw, 1.5rem) 0;
+  padding: clamp(0.75rem, 2vw, 1rem);
   background: white;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: clamp(0.5rem, 2vw, 1rem);
 }
 
 .pagination-info {
   color: #666;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
   font-weight: 500;
 }
 
 .pagination-buttons {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
   flex-wrap: wrap;
   justify-content: center;
 }
 
 .btn-pagination {
-  padding: 0.5rem 1rem;
+  padding: clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem);
   border: 1px solid #ddd;
   background: white;
   color: #5a5a5a;
   border-radius: 5px;
   cursor: pointer;
   transition: all 0.3s;
-  font-size: 0.9rem;
-  min-width: 40px;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  min-width: clamp(35px, 8vw, 40px);
   text-align: center;
 }
 
@@ -538,21 +538,22 @@ export default {
 
 .page-numbers {
   display: flex;
-  gap: 0.25rem;
+  gap: clamp(0.1rem, 1vw, 0.25rem);
 }
 
 .items-per-page {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 
 .items-per-page select {
-  padding: 0.4rem;
+  padding: clamp(0.3rem, 1.5vw, 0.4rem);
   border: 1px solid #ddd;
   border-radius: 5px;
   background: white;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 
 .admin-tabs {
@@ -566,10 +567,11 @@ export default {
   display: flex;
   background: #f8f9fa;
   border-bottom: 1px solid #dee2e6;
+  flex-wrap: wrap;
 }
 
 .tab-btn {
-  padding: 1rem 2rem;
+  padding: clamp(0.75rem, 2vw, 1rem) clamp(1rem, 3vw, 2rem);
   border: none;
   background: transparent;
   cursor: pointer;
@@ -577,6 +579,9 @@ export default {
   color: #6c757d;
   transition: all 0.3s;
   border-bottom: 3px solid transparent;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  flex: 1;
+  min-width: min(200px, 100%);
 }
 
 .tab-btn:hover {
@@ -591,29 +596,33 @@ export default {
 }
 
 .tab-content {
-  padding: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
 }
 
 .tab-pane h3 {
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 3vw, 1.5rem);
   color: #5a5a5a;
+  font-size: clamp(1.1rem, 3vw, 1.3rem);
 }
 
 .table-container {
   overflow-x: auto;
+  margin-bottom: clamp(1rem, 3vw, 1.5rem);
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 1rem;
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+  min-width: min(800px, 100%);
 }
 
 .data-table th,
 .data-table td {
-  padding: 0.75rem;
+  padding: clamp(0.6rem, 2vw, 0.75rem);
   text-align: left;
   border-bottom: 1px solid #dee2e6;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 
 .data-table th {
@@ -638,6 +647,16 @@ export default {
   font-weight: 600;
 }
 
+.btn {
+  padding: clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
 .btn-danger {
   background-color: #dc3545;
   border-color: #dc3545;
@@ -650,8 +669,8 @@ export default {
 }
 
 .btn-sm {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.875rem;
+  padding: clamp(0.3rem, 1.5vw, 0.4rem) clamp(0.6rem, 2vw, 0.8rem);
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
 }
 
 .tratamientos-list {
@@ -662,67 +681,67 @@ export default {
 
 .tratamientos-list li {
   padding: 0.1rem 0;
-  font-size: 0.875rem;
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
 }
 
 .no-data {
   text-align: center;
-  padding: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
   color: #6c757d;
   font-style: italic;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
 }
 
 .text-muted {
   color: #6c757d;
   font-style: italic;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 
-@media (max-width: 768px) {
-  .pagination-controls {
-    flex-direction: column;
-    text-align: center;
-    gap: 1rem;
-  }
+/* ESTILOS GENERALES */
+.page-header {
+  background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
+  padding: clamp(1rem, 4vw, 2rem) 0;
+  text-align: center;
+}
 
-  .pagination-buttons {
-    order: 1;
-  }
+.page-header h2 {
+  color: #5a5a5a;
+  margin-bottom: 0.5rem;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+}
 
-  .pagination-info {
-    order: 2;
-  }
+.content-section {
+  padding: clamp(1rem, 3vw, 2rem) 0;
+}
 
-  .items-per-page {
-    order: 3;
-  }
-
-  .btn-pagination {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    min-width: 35px;
-  }
-
-  .page-numbers {
-    gap: 0.1rem;
-  }
-
+/* AJUSTES PARA DISPOSITIVOS MUY PEQUEÑOS */
+@media (max-width: 480px) {
   .tab-buttons {
     flex-direction: column;
   }
 
   .tab-btn {
-    text-align: left;
+    min-width: 100%;
+    text-align: center;
   }
 
   .data-table {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
   }
-}
 
-@media (max-width: 480px) {
+  .data-table th,
+  .data-table td {
+    padding: 0.4rem;
+  }
+
+  .pagination-controls {
+    flex-direction: column;
+    text-align: center;
+  }
+
   .pagination-buttons {
     flex-direction: column;
-    gap: 0.5rem;
   }
 
   .page-numbers {
@@ -730,10 +749,20 @@ export default {
     width: 100%;
     justify-content: center;
   }
+}
+
+@media (max-width: 360px) {
+
+  .data-table th,
+  .data-table td {
+    padding: 0.3rem;
+    font-size: 0.7rem;
+  }
 
   .btn-pagination {
-    width: 100%;
-    max-width: 120px;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    min-width: 30px;
   }
 }
 </style>

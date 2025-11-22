@@ -4,8 +4,7 @@
         "home": "Inicio",
         "treatments": "Tratamientos",
         "packages": "Paquetes",
-        "MyReservations": "Mis Citas",
-        "MyPackages": "Mis Paquetes",
+        "MyReservations": "Mis Reservas",
         "user": "Usuario",
         "adminPanel": "Panel Admin",
         "logout": "Cerrar Sesión"
@@ -93,9 +92,14 @@
         "noAppointments": "No hay citas reservadas",
         "noPackages": "No hay paquetes comprados"
     },
+    "myReservations": {
+        "title": "Mis Reservas",
+        "subtitle": "Gestión de sus reservas",
+        "appointments": "Tus Citas",
+        "packages": "Tus Paquetes"
+    },
     "cancelAppointment": {
-        "title": "Mis Citas",
-        "yourAppointments": "Sus Citas",
+        "reservedAppointments": "Citas Reservadas",
         "date": "Fecha",
         "time": "Hora",
         "treatment": "Tratamiento",
@@ -119,8 +123,7 @@
         }
     },
     "cancelPackage": {
-        "title": "Mis Paquetes",
-        "yourPackages": "Sus Paquetes",
+        "reservedPackages": "Paquetes Reservados",
         "packageNumber": "N° {number}",
         "startDate": "Fecha de inicio:",
         "includedTreatments": "Tratamientos incluidos:",

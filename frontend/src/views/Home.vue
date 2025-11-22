@@ -59,48 +59,55 @@ export default {
 .hero {
   background: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)),
     url('../assets/spa.jpg') no-repeat center center/cover;
-  padding: 1rem 0;
+  padding: clamp(1rem, 4vw, 3rem) 0;
   text-align: center;
 }
 
 .hero h2 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
+  font-size: clamp(1.5rem, 6vw, 2.5rem);
+  margin-bottom: clamp(0.5rem, 2vw, 1rem);
   color: #5a5a5a;
 }
 
 .hero p {
-  font-size: 1.2rem;
-  max-width: 800px;
-  margin: 0 auto 2rem;
+  font-size: clamp(1rem, 3vw, 1.2rem);
+  max-width: min(800px, 90vw);
+  margin: 0 auto clamp(1rem, 4vw, 2rem);
   color: #666;
+  line-height: 1.6;
 }
 
 .features {
-  padding: 1rem 0;
+  padding: clamp(1rem, 4vw, 3rem) 0;
   background-color: #f0f8ff;
 }
 
 .features h2 {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: clamp(1rem, 4vw, 2rem);
   color: #5a5a5a;
+  font-size: clamp(1.5rem, 5vw, 2rem);
 }
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: clamp(1rem, 3vw, 2rem);
+  margin-bottom: clamp(1rem, 3vw, 2rem);
 }
 
 .feature-card {
   background: linear-gradient(135deg, #f8c8dc 0%, #a2d2ff 100%);
-  padding: 1rem;
+  padding: clamp(1rem, 3vw, 2rem);
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
   text-align: center;
   transition: transform 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: min(200px, 40vw);
 }
 
 .feature-card:hover {
@@ -108,13 +115,16 @@ export default {
 }
 
 .feature-card h3 {
-  margin-bottom: 1rem;
+  margin-bottom: clamp(0.5rem, 2vw, 1rem);
   color: #5a5a5a;
+  font-size: clamp(1.1rem, 3vw, 1.3rem);
 }
 
 .feature-card p {
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 3vw, 1.5rem);
   color: #666;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  line-height: 1.5;
 }
 
 .feature-image {
@@ -123,5 +133,29 @@ export default {
   border-radius: 15px;
   object-fit: cover;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  max-height: min(300px, 50vw);
+}
+
+.btn-link {
+  display: inline-block;
+  padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
+  background: #ff6b95;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: 600;
+  transition: all 0.3s;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+}
+
+.btn-link:hover {
+  background: #e55a82;
+  transform: translateY(-2px);
+}
+
+/* Ajuste para una sola tarjeta en admin */
+.features-grid:has(.feature-card:only-child) {
+  grid-template-columns: minmax(auto, 600px);
+  justify-content: center;
 }
 </style>
