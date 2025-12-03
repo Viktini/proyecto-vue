@@ -3,9 +3,9 @@ import { Controller, Get, Post, Put, Delete, Body, Param, HttpCode, HttpStatus, 
 import { TratamientosService } from './tratamientos.service';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
 import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
-import { JwtAuthGuard } from '../common/guards/auth.guard';
-import { ValidationPipe } from '../common/pipes/validation.pipe';
-import { Public } from '../common/decorators/public.decorator'; // Añade esto
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { ValidationPipe } from '../../common/pipes/validation.pipe';
+import { Public } from '../../common/decorators/public.decorator';
 
 @Controller('tratamientos')
 export class TratamientosController {

@@ -20,7 +20,7 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login,
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: false, hideNavbar: true }
   },
   {
     path: '/home',
@@ -69,6 +69,10 @@ const routes = [
     name: 'DatosUsuario',
     component: DatosUsuario,
     meta: { requiresAuth: true, role: 'cliente' }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/home'
   }
 ]
 
@@ -77,47 +81,49 @@ const router = createRouter({
   routes
 })
 
-// ✅ GUARD SIMPLIFICADO - SIN DEPENDER DEL STORE
+// ✅ GUARD MEJORADO CON VERIFICACIÓN DE ROLES
 router.beforeEach((to, from, next) => {
-  console.log('🛡️ Router guard - Verificando ruta:', to.path)
-  
-  // Obtener datos de autenticación directamente de localStorage
+  const token = localStorage.getItem('token')
   const userData = localStorage.getItem('user')
-  const isAuthenticated = !!userData
-  let userRole = null
+  let user = null
   
-  if (userData) {
-    try {
-      const user = JSON.parse(userData)
-      userRole = user.rol_usuario
-      console.log('👤 Usuario detectado:', user.nom_usuario, 'Rol:', userRole)
-    } catch (error) {
-      console.error('❌ Error parseando user data:', error)
-    }
+  try {
+    user = userData ? JSON.parse(userData) : null
+  } catch (error) {
+    console.error('Error parsing user data:', error)
+    localStorage.removeItem('user')
+    localStorage.removeItem('token')
   }
 
-  // Si la ruta requiere autenticación y no está autenticado
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    console.log('🚫 No autenticado - Redirigiendo a login')
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiredRole = to.meta.role
+
+  // Si la ruta requiere autenticación y no hay token
+  if (requiresAuth && !token) {
     next('/login')
     return
   }
 
-  // Si la ruta requiere un rol específico y no lo tiene
-  if (to.meta.requiresAuth && to.meta.role && to.meta.role !== userRole) {
-    console.log('🚫 Rol insuficiente - Redirigiendo a home')
+  // Si ya está autenticado y va a login, redirigir a home
+  if (to.path === '/login' && token) {
     next('/home')
     return
   }
 
-  // Si ya está autenticado y va al login, redirigir a home
-  if (to.path === '/login' && isAuthenticated) {
-    console.log('✅ Ya autenticado - Redirigiendo a home')
-    next('/home')
-    return
+  // Si la ruta requiere un rol específico
+  if (requiresAuth && requiredRole) {
+    if (!user || user.rol_usuario !== requiredRole) {
+      // Si no tiene el rol requerido, redirigir según su rol
+      if (user && user.rol_usuario === 'admin') {
+        next('/admin')
+      } else {
+        next('/home')
+      }
+      return
+    }
   }
 
-  console.log('✅ Acceso permitido a:', to.path)
+  // Si todo está bien, continuar
   next()
 })
 

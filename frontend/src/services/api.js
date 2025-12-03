@@ -1,89 +1,98 @@
-import axios from 'axios';
+// src/services/api.js
+import axios from 'axios'
 
-// Puerto 5000 para el backend
-const API_BASE_URL = 'http://localhost:5000';
+// Backend NestJS corre en puerto 5000
+const API_URL = 'http://localhost:5000/api/v1'
 
+// Configurar axios
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_URL,
+  timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 15000, // 15 segundos para desarrollo
-});
+    'Content-Type': 'application/json'
+  }
+})
 
-// Interceptor para logs en desarrollo
+// Interceptor para debug
 api.interceptors.request.use(
   (config) => {
-    console.log(`🔄 Vue → Backend: ${config.method?.toUpperCase()} ${config.url}`);
-    return config;
+    console.log(`🌐 Enviando ${config.method.toUpperCase()} a:`, config.baseURL + config.url)
+    console.log('📦 Datos:', config.data)
+    return config
   },
   (error) => {
-    console.error('❌ Error en request Vue:', error);
-    return Promise.reject(error);
+    console.error('❌ Error en request:', error)
+    return Promise.reject(error)
   }
-);
+)
 
+// Interceptor de respuesta
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ Backend → Vue: ${response.status} ${response.config.url}`);
-    return response;
+    console.log('✅ Respuesta recibida:', response.data)
+    return response.data
   },
   (error) => {
-    console.error('❌ Error en respuesta Backend:', {
-      url: error.config?.url,
+    console.error('❌ Error en respuesta:', {
+      message: error.message,
       status: error.response?.status,
-      message: error.response?.data?.message || error.message
-    });
-    return Promise.reject(error);
+      data: error.response?.data,
+      url: error.config?.baseURL + error.config?.url
+    })
+    
+    return Promise.reject({
+      message: error.response?.data?.message || error.message || 'Error de conexión',
+      status: error.response?.status,
+      data: error.response?.data
+    })
   }
-);
+)
 
-// ✅ Función para probar conexión con backend
-export const testBackendConnection = async () => {
-  try {
-    const response = await api.get('/health');
-    return response.data;
-  } catch (error) {
-    const message = error.response?.data?.message || 'No se pudo conectar al backend';
-    throw new Error(`Backend: ${message}`);
-  }
-};
+// Servicios específicos - USANDO LAS RUTAS CORRECTAS /auth/
+export const authAPI = {
+  login: (data) => {
+    console.log('🔐 Intentando login en /auth/login...')
+    // AJUSTA ESTOS CAMPOS SEGÚN LO QUE ESPERE TU BACKEND
+    // Probablemente espera 'username' y 'password', no 'nom_usuario'
+    const loginData = {
+      username: data.nom_usuario, // o podría ser 'email'
+      password: data.contrasenna_usuario
+    }
+    return api.post('/auth/login', loginData)
+  },
+  register: (data) => {
+    console.log('📝 Intentando registro en /auth/register...')
+    // Ajusta los campos según tu backend
+    const registerData = {
+      username: data.username,
+      password: data.password,
+      email: data.email || `${data.username}@example.com`, // Si requiere email
+      // Añade otros campos que requiera tu backend
+    }
+    return api.post('/auth/register', registerData)
+  },
+  logout: () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    console.log('👋 Logout exitoso')
+  },
+  isAuthenticated: () => !!localStorage.getItem('token'),
+  getCurrentUser: () => {
+    try {
+      const user = localStorage.getItem('user')
+      return user ? JSON.parse(user) : null
+    } catch {
+      return null
+    }
+  },
+  // Nuevo: Endpoint de health
+  healthCheck: () => api.get('/auth/health')
+}
 
-// ✅ Función para enviar mensaje de prueba
-export const sendTestMessage = async (message) => {
-  try {
-    const response = await api.post('/test-connection', {
-      message: message,
-      frontendTimestamp: new Date().toISOString(),
-      frontend: 'Vue.js 3',
-      framework: 'Composition API'
-    });
-    return response.data;
-  } catch (error) {
-    const message = error.response?.data?.message || 'Error enviando mensaje';
-    throw new Error(`Backend: ${message}`);
-  }
-};
+// API de prueba
+export const testAPI = {
+  testConnection: (data) => api.post('/test-connection', data),
+  getAuthHealth: () => api.get('/auth/health')
+}
 
-// ✅ Funciones para usuarios
-export const getUsers = async () => {
-  try {
-    const response = await api.get('/users');
-    return response.data;
-  } catch (error) {
-    const message = error.response?.data?.message || 'Error obteniendo usuarios';
-    throw new Error(`Backend: ${message}`);
-  }
-};
-
-export const createUser = async (userData) => {
-  try {
-    const response = await api.post('/users', userData);
-    return response.data;
-  } catch (error) {
-    const message = error.response?.data?.message || 'Error creando usuario';
-    throw new Error(`Backend: ${message}`);
-  }
-};
-
-export default api;
+export default api

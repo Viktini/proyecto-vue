@@ -1,4 +1,4 @@
-<!-- Login.vue - VERSIÓN CON VALIDACIÓN SOLO AL PRESIONAR BOTÓN -->
+<!-- Login.vue - VERSIÓN COMPLETA CORREGIDA -->
 <template>
   <div class="login-container">
     <div class="login-form">
@@ -9,61 +9,78 @@
 
       <!-- Selector de modo (Login/Registro) -->
       <div class="mode-selector">
-        <button @click="isRegisterMode = false" :class="{ active: !isRegisterMode }" class="mode-btn">
+        <button @click="toggleMode(false)" :class="{ active: !isRegisterMode }" class="mode-btn">
           Iniciar Sesión
         </button>
-        <button @click="isRegisterMode = true" :class="{ active: isRegisterMode }" class="mode-btn">
+        <button @click="toggleMode(true)" :class="{ active: isRegisterMode }" class="mode-btn">
           Registrarse
         </button>
       </div>
 
       <form @submit.prevent="isRegisterMode ? handleRegister() : handleLogin()">
-        <!-- ✅ NUEVO CAMPO: Carnet de Identidad (solo en registro) -->
+        <!-- Campos para registro -->
         <div v-if="isRegisterMode" class="form-group">
-          <label for="carnet">Carnet de Identidad</label>
-          <input type="number" id="carnet" v-model="formData.carnet" :class="{
-            error: showValidationErrors && (errors.carnet || !formData.carnet),
-            'empty-field': showValidationErrors && !formData.carnet
-          }" placeholder="Ingrese su carnet de identidad" required>
-          <span v-if="showValidationErrors && errors.carnet" class="error-message">{{ errors.carnet }}</span>
-          <span v-else-if="showValidationErrors && !formData.carnet" class="error-message">
-            El carnet de identidad es requerido
+          <label for="fullName">Nombre Completo *</label>
+          <input type="text" id="fullName" v-model="formData.fullName" :class="{
+            error: showValidationErrors && (errors.fullName || !formData.fullName),
+            'empty-field': showValidationErrors && !formData.fullName
+          }" placeholder="Ingrese su nombre completo" required>
+          <span v-if="showValidationErrors && errors.fullName" class="error-message">{{ errors.fullName }}</span>
+          <span v-else-if="showValidationErrors && !formData.fullName" class="error-message">
+            El nombre completo es requerido
+          </span>
+        </div>
+
+        <div v-if="isRegisterMode" class="form-group">
+          <label for="gmail">Gmail *</label>
+          <input type="email" id="gmail" v-model="formData.gmail" :class="{
+            error: showValidationErrors && (errors.gmail || !formData.gmail),
+            'empty-field': showValidationErrors && !formData.gmail
+          }" placeholder="ejemplo@gmail.com" required>
+          <span v-if="showValidationErrors && errors.gmail" class="error-message">{{ errors.gmail }}</span>
+          <span v-else-if="showValidationErrors && !formData.gmail" class="error-message">
+            El gmail es requerido
           </span>
         </div>
 
         <div class="form-group">
-          <label for="username">Usuario</label>
+          <label for="username">{{ isRegisterMode ? 'Nombre de Usuario *' : 'Usuario o Gmail *' }}</label>
           <input type="text" id="username" v-model="formData.username" :class="{
-            error: showValidationErrors && (errors.username || !formData.username.trim()),
-            'empty-field': showValidationErrors && !formData.username.trim()
-          }" placeholder="Ingrese su usuario" required>
+            error: showValidationErrors && (errors.username || !formData.username?.trim()),
+            'empty-field': showValidationErrors && !formData.username?.trim()
+          }" :placeholder="isRegisterMode ? 'Elija un nombre de usuario' : 'Ingrese su usuario o gmail'" required>
           <span v-if="showValidationErrors && errors.username" class="error-message">{{ errors.username }}</span>
-          <span v-else-if="showValidationErrors && !formData.username.trim()" class="error-message">
-            El usuario es requerido
+          <span v-else-if="showValidationErrors && !formData.username?.trim()" class="error-message">
+            {{ isRegisterMode ? 'El nombre de usuario es requerido' : 'Usuario o gmail es requerido' }}
           </span>
         </div>
 
         <div class="form-group">
-          <label for="password">Contraseña</label>
+          <label for="password">Contraseña *</label>
           <input type="password" id="password" v-model="formData.password" :class="{
             error: showValidationErrors && (errors.password || !formData.password),
             'empty-field': showValidationErrors && !formData.password
-          }" placeholder="Ingrese su contraseña" required>
+          }" :placeholder="isRegisterMode ? 'Mínimo 6 caracteres con mayúsculas y números' : 'Ingrese su contraseña'"
+            required>
           <span v-if="showValidationErrors && errors.password" class="error-message">{{ errors.password }}</span>
           <span v-else-if="showValidationErrors && !formData.password" class="error-message">
             La contraseña es requerida
           </span>
+          <small v-if="isRegisterMode" class="password-hint">
+            La contraseña debe contener al menos una mayúscula, una minúscula y un número
+          </small>
         </div>
 
         <!-- Campo adicional para registro -->
         <div v-if="isRegisterMode" class="form-group">
-          <label for="confirmPassword">Confirmar Contraseña</label>
+          <label for="confirmPassword">Confirmar Contraseña *</label>
           <input type="password" id="confirmPassword" v-model="formData.confirmPassword" :class="{
             error: showValidationErrors && (errors.confirmPassword || !formData.confirmPassword),
             'empty-field': showValidationErrors && !formData.confirmPassword
           }" placeholder="Confirme su contraseña" required>
-          <span v-if="showValidationErrors && errors.confirmPassword" class="error-message">{{ errors.confirmPassword
-            }}</span>
+          <span v-if="showValidationErrors && errors.confirmPassword" class="error-message">
+            {{ errors.confirmPassword }}
+          </span>
           <span v-else-if="showValidationErrors && !formData.confirmPassword" class="error-message">
             Confirmar contraseña es requerido
           </span>
@@ -71,7 +88,10 @@
 
         <div class="form-actions">
           <button type="submit" class="btn btn-primary" :disabled="loading">
-            <span v-if="loading">{{ isRegisterMode ? 'Registrando...' : 'Iniciando sesión...' }}</span>
+            <span v-if="loading">
+              <span class="loading-spinner"></span>
+              {{ isRegisterMode ? 'Registrando...' : 'Iniciando sesión...' }}
+            </span>
             <span v-else>{{ isRegisterMode ? 'Registrarse' : 'Iniciar Sesión' }}</span>
           </button>
         </div>
@@ -84,110 +104,131 @@
           {{ successMessage }}
         </div>
       </form>
-
-      <div class="demo-accounts">
-        <h3>Cuentas de demostración:</h3>
-        <div class="account-info">
-          <p><strong>Administrador:</strong> carnet: 12345678, usuario: admin, contraseña: admin123</p>
-          <p><strong>Cliente:</strong> carnet: 87654321, usuario: cliente, contraseña: cliente123</p>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
-import { useAppStore } from '@/stores/appStore'
+import { ref, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useI18nComposable } from '@/composables/useI18n'
+import { authAPI } from '@/services/api'
 
 export default {
   name: 'Login',
-  setup() {
-    const store = useAppStore()
-    const router = useRouter()
-    const { t, changeLanguage, currentLanguage } = useI18nComposable()
 
-    const currentLang = ref(currentLanguage())
+  setup() {
+    const router = useRouter()
+
+    // Variables reactivas
     const isRegisterMode = ref(false)
     const loading = ref(false)
     const errorMessage = ref('')
     const successMessage = ref('')
-    const showValidationErrors = ref(false) // ✅ CONTROLAR CUÁNDO MOSTRAR ERRORES
+    const showValidationErrors = ref(false)
 
-    const formData = ref({
-      carnet: '',
+    // Usar reactive para el objeto formData
+    const formData = reactive({
+      fullName: '',
+      gmail: '',
       username: '',
       password: '',
       confirmPassword: ''
     })
 
-    const errors = ref({})
+    // Usar reactive para errors
+    const errors = reactive({})
 
     onMounted(() => {
-      const savedLang = localStorage.getItem('preferred-language')
-      if (savedLang) {
-        currentLang.value = savedLang
-        changeLanguage(savedLang)
+      // Si el usuario ya está autenticado, redirigir a home
+      if (authAPI.isAuthenticated()) {
+        const user = authAPI.getCurrentUser()
+        if (user && user.rol_usuario === 'admin') {
+          router.push('/admin')
+        } else {
+          router.push('/home')
+        }
       }
     })
 
     // ✅ FUNCIÓN: Validar campo individual
     const validateField = (fieldName) => {
-      const value = formData.value[fieldName]
+      const value = formData[fieldName]
       const trimmedValue = typeof value === 'string' ? value.trim() : value
 
       switch (fieldName) {
-        case 'carnet':
-          if (!value) {
-            errors.value.carnet = 'El carnet de identidad es requerido'
-          } else if (value.toString().length < 6) {
-            errors.value.carnet = 'El carnet debe tener al menos 6 dígitos'
+        case 'fullName':
+          if (!trimmedValue) {
+            errors.fullName = 'El nombre completo es requerido'
+          } else if (trimmedValue.length < 2) {
+            errors.fullName = 'El nombre debe tener al menos 2 caracteres'
+          } else if (trimmedValue.length > 100) {
+            errors.fullName = 'El nombre no puede tener más de 100 caracteres'
           } else {
-            delete errors.value.carnet
+            delete errors.fullName
+          }
+          break
+
+        case 'gmail':
+          if (!trimmedValue) {
+            errors.gmail = 'El gmail es requerido'
+          } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedValue)) {
+            errors.gmail = 'Ingrese un gmail válido'
+          } else {
+            delete errors.gmail
           }
           break
 
         case 'username':
           if (!trimmedValue) {
-            errors.value.username = 'El usuario es requerido'
-          } else if (trimmedValue.length < 3) {
-            errors.value.username = 'El usuario debe tener al menos 3 caracteres'
+            errors.username = isRegisterMode.value
+              ? 'El nombre de usuario es requerido'
+              : 'Usuario o gmail es requerido'
+          } else if (isRegisterMode.value && trimmedValue.length < 3) {
+            errors.username = 'El usuario debe tener al menos 3 caracteres'
+          } else if (isRegisterMode.value && trimmedValue.length > 50) {
+            errors.username = 'El usuario no puede tener más de 50 caracteres'
+          } else if (isRegisterMode.value && !/^[a-zA-Z0-9_]+$/.test(trimmedValue)) {
+            errors.username = 'El usuario solo puede contener letras, números y guiones bajos'
           } else {
-            delete errors.value.username
+            delete errors.username
           }
           break
 
         case 'password':
           if (!value) {
-            errors.value.password = 'La contraseña es requerida'
+            errors.password = 'La contraseña es requerida'
           } else if (value.length < 6) {
-            errors.value.password = 'La contraseña debe tener al menos 6 caracteres'
+            errors.password = 'La contraseña debe tener al menos 6 caracteres'
+          } else if (isRegisterMode.value && !/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])/.test(value)) {
+            errors.password = 'Debe contener mayúsculas, minúsculas y números'
+          } else if (value.length > 100) {
+            errors.password = 'La contraseña no puede tener más de 100 caracteres'
           } else {
-            delete errors.value.password
+            delete errors.password
           }
           break
 
         case 'confirmPassword':
           if (!value) {
-            errors.value.confirmPassword = 'Confirme su contraseña'
-          } else if (formData.value.password !== value) {
-            errors.value.confirmPassword = 'Las contraseñas no coinciden'
+            errors.confirmPassword = 'Confirme su contraseña'
+          } else if (formData.password !== value) {
+            errors.confirmPassword = 'Las contraseñas no coinciden'
           } else {
-            delete errors.value.confirmPassword
+            delete errors.confirmPassword
           }
           break
       }
     }
 
     const validateForm = () => {
-      errors.value = {}
-      showValidationErrors.value = true // ✅ ACTIVAR VISUALIZACIÓN DE ERRORES
+      // Limpiar errores anteriores
+      Object.keys(errors).forEach(key => delete errors[key])
+      showValidationErrors.value = true
 
       // Validar todos los campos
       if (isRegisterMode.value) {
-        validateField('carnet')
+        validateField('fullName')
+        validateField('gmail')
       }
       validateField('username')
       validateField('password')
@@ -195,13 +236,12 @@ export default {
         validateField('confirmPassword')
       }
 
-      return Object.keys(errors.value).length === 0
+      return Object.keys(errors).length === 0
     }
 
+    // ✅ FUNCIÓN: Login
     const handleLogin = async () => {
-      // ✅ SOLO VALIDAR CUANDO SE PRESIONA EL BOTÓN
       if (!validateForm()) {
-        // Scroll al primer campo con error
         scrollToFirstError()
         return
       }
@@ -211,61 +251,75 @@ export default {
       successMessage.value = ''
 
       try {
-        const loginData = {
-          nom_usuario: formData.value.username,
-          contrasenna_usuario: formData.value.password
-        }
+        console.log('🔐 Intentando login con:', {
+          usernameOrEmail: formData.username,
+          password: formData.password
+        })
 
-        console.log('📤 Enviando login:', loginData)
-
-        const response = await fetch('http://localhost:5000/api/usuarios/login', {
+        const response = await fetch('http://localhost:3001/api/v1/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
-          body: JSON.stringify(loginData)
+          body: JSON.stringify({
+            usernameOrEmail: formData.username,
+            password: formData.password
+          })
         })
 
-        if (!response.ok) {
-          // ✅ MENSAJE GENERAL DE ERROR POR SEGURIDAD
-          throw new Error('Credenciales incorrectas. Verifique su usuario y contraseña.')
-        }
-
         const result = await response.json()
-        console.log('✅ Login exitoso - Respuesta completa:', result)
 
-        if (!result.usuario) {
-          throw new Error('No se recibió información del usuario')
+        if (response.ok && result.success) {
+          console.log('✅ Login exitoso:', result)
+
+          // Guardar token y usuario
+          if (result.data.access_token) {
+            localStorage.setItem('token', result.data.access_token)
+            localStorage.setItem('user', JSON.stringify(result.data.user))
+
+            successMessage.value = '¡Inicio de sesión exitoso! Redirigiendo...'
+
+            setTimeout(() => {
+              const userRole = result.data.user?.role || 'cliente'
+              if (userRole === 'admin') {
+                router.push('/admin')
+              } else {
+                router.push('/home')
+              }
+            }, 1000)
+          }
+        } else {
+          throw new Error(result.message || `Error ${response.status}: ${result.error}`)
         }
-
-        console.log('👤 Usuario recibido:', result.usuario)
-        console.log('🔑 Rol del usuario:', result.usuario.rol_usuario)
-
-        // Guardar en store/localStorage
-        localStorage.setItem('user', JSON.stringify(result.usuario))
-        localStorage.setItem('token', result.token || 'token-temporal')
-
-        // ✅ REDIRECCIÓN A HOME PARA TODOS LOS USUARIOS
-        console.log('🔄 Redirigiendo a HOME para todos los usuarios...')
-
-        setTimeout(() => {
-          console.log('🚀 Redirigiendo a /home')
-          window.location.href = '/home'
-        }, 100)
 
       } catch (error) {
         console.error('❌ Error en login:', error)
-        // ✅ SIEMPRE MOSTRAR EL MISMO MENSAJE GENERAL POR SEGURIDAD
-        errorMessage.value = 'Credenciales incorrectas. Verifique su usuario y contraseña.'
+
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage.value = 'No se puede conectar al servidor. Verifica que el backend esté corriendo en http://localhost:3001'
+        } else if (error.message.includes('401') || error.message.includes('INVALID_CREDENTIALS')) {
+          errorMessage.value = 'Credenciales incorrectas'
+        } else if (error.message.includes('404')) {
+          errorMessage.value = 'Ruta no encontrada. Verifica la URL del backend'
+        } else {
+          errorMessage.value = `Error: ${error.message || 'Desconocido'}`
+        }
       } finally {
         loading.value = false
       }
     }
 
+    // ✅ FUNCIÓN: Registro
     const handleRegister = async () => {
-      // ✅ SOLO VALIDAR CUANDO SE PRESIONA EL BOTÓN
       if (!validateForm()) {
-        // Scroll al primer campo con error
+        scrollToFirstError()
+        return
+      }
+
+      // Validar confirmación de contraseña
+      if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = 'Las contraseñas no coinciden'
         scrollToFirstError()
         return
       }
@@ -276,35 +330,66 @@ export default {
 
       try {
         const registerData = {
-          id_usuario: parseInt(formData.value.carnet),
-          username: formData.value.username,
-          password: formData.value.password
+          fullName: formData.fullName,
+          gmail: formData.gmail,
+          username: formData.username,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword
         }
 
-        console.log('📤 Enviando registro con carnet:', registerData)
+        console.log('📤 Enviando registro...', registerData)
 
-        await store.register(registerData)
-        successMessage.value = '¡Registro exitoso! Ahora puede iniciar sesión.'
+        const response = await fetch('http://localhost:3001/api/v1/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Origin': 'http://localhost:3000' // Añade esto
+          },
+          mode: 'cors', // Añade esto
+          credentials: 'omit', // Cambia a 'omit' en lugar de 'include'
+          body: JSON.stringify(registerData)
+        })
 
-        // Limpiar formulario y cambiar a modo login
-        formData.value = {
-          carnet: '',
-          username: '',
-          password: '',
-          confirmPassword: ''
+        const result = await response.json()
+
+        if (response.ok && result.success) {
+          console.log('✅ Registro exitoso:', result)
+
+          successMessage.value = '¡Registro exitoso! Ahora puede iniciar sesión con sus credenciales.'
+
+          // Limpiar formulario
+          Object.assign(formData, {
+            fullName: '',
+            gmail: '',
+            username: '',
+            password: '',
+            confirmPassword: ''
+          })
+          showValidationErrors.value = false
+
+          // Cambiar a modo login después de 3 segundos
+          setTimeout(() => {
+            isRegisterMode.value = false
+            successMessage.value = ''
+          }, 3000)
+
+        } else {
+          throw new Error(result.message || `Error ${response.status}: ${result.error}`)
         }
-        showValidationErrors.value = false // ✅ Resetear errores visuales
 
-        setTimeout(() => {
-          isRegisterMode.value = false
-          successMessage.value = ''
-        }, 3000)
       } catch (error) {
         console.error('❌ Error en registro:', error)
-        // ✅ EN REGISTRO SÍ PODEMOS MOSTRAR MENSAJES ESPECÍFICOS
-        errorMessage.value = error.response?.data?.message ||
-          error.message ||
-          'Error al registrar usuario. Intente nuevamente.'
+
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage.value = 'No se puede conectar al servidor. Verifica que el backend esté corriendo'
+        } else if (error.message.includes('Conflict') || error.message.includes('ya está registrado')) {
+          errorMessage.value = 'El gmail o nombre de usuario ya está registrado'
+        } else if (error.message.includes('Bad Request') || error.message.includes('no coinciden')) {
+          errorMessage.value = 'Las contraseñas no coinciden'
+        } else {
+          errorMessage.value = `Error: ${error.message || 'Desconocido'}`
+        }
       } finally {
         loading.value = false
       }
@@ -324,25 +409,48 @@ export default {
       }, 100)
     }
 
+    // ✅ FUNCIÓN: Cambiar entre modo login y registro
+    const toggleMode = (mode) => {
+      isRegisterMode.value = mode
+      errorMessage.value = ''
+      successMessage.value = ''
+      showValidationErrors.value = false
+
+      // Resetear errores
+      Object.keys(errors).forEach(key => delete errors[key])
+
+      // Limpiar formulario
+      Object.assign(formData, {
+        fullName: '',
+        gmail: '',
+        username: '',
+        password: '',
+        confirmPassword: ''
+      })
+    }
+
+    // ✅ Retornar TODAS las variables y funciones que usa el template
     return {
+      // Variables reactivas
+      isRegisterMode,
+      showValidationErrors,
       formData,
       errors,
       errorMessage,
       successMessage,
       loading,
-      isRegisterMode,
-      showValidationErrors,
+
+      // Funciones
       handleLogin,
       handleRegister,
-      t,
-      changeLanguage,
-      currentLang
+      toggleMode
     }
   }
 }
 </script>
 
 <style scoped>
+/* Estilos completos */
 .login-container {
   min-height: 100vh;
   display: flex;
@@ -430,7 +538,6 @@ export default {
   box-shadow: 0 0 0 3px rgba(162, 210, 255, 0.2);
 }
 
-/* ✅ ESTILOS MEJORADOS PARA CAMPOS CON ERROR */
 .form-group input.error,
 .form-group input.empty-field {
   border-color: #ff6b6b;
@@ -444,7 +551,6 @@ export default {
   box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
 }
 
-/* ✅ EFECTO DE VIBRACIÓN PARA CAMPOS VACÍOS */
 @keyframes shake {
 
   0%,
@@ -472,6 +578,14 @@ export default {
   display: block;
   font-weight: 500;
   padding-left: 0.25rem;
+}
+
+.password-hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.8rem;
+  color: #666;
+  font-style: italic;
 }
 
 .form-actions {
@@ -527,26 +641,21 @@ export default {
   border: 1px solid #2ecc71;
 }
 
-.demo-accounts {
-  margin-top: 2rem;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  border-radius: 5px;
-  border-left: 4px solid #a2d2ff;
-  font-size: 0.9rem;
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
 }
 
-.demo-accounts h3 {
-  margin-bottom: 1rem;
-  color: #5a5a5a;
-  font-size: 1rem;
-}
-
-.account-info p {
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-  color: #666;
-  line-height: 1.4;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive */
@@ -570,15 +679,6 @@ export default {
   .form-group input {
     padding: 0.7rem;
     font-size: 0.9rem;
-  }
-
-  .demo-accounts {
-    padding: 0.8rem;
-    font-size: 0.85rem;
-  }
-
-  .account-info p {
-    font-size: 0.8rem;
   }
 }
 
