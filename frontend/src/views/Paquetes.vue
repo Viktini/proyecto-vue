@@ -115,7 +115,7 @@
 
 <script>
 import { computed, ref, onMounted, watch } from 'vue'
-import { useAppStore } from '@/stores/appStore'
+import { useAppStore } from '../stores/appStore'
 import { useRouter } from 'vue-router'
 
 export default {
@@ -349,6 +349,7 @@ export default {
     })
 
     return {
+      store,
       // Datos principales
       paquetesPaginados,
       totalPaquetes,

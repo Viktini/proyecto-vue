@@ -200,7 +200,7 @@
 
 <script>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useAppStore } from '@/stores/appStore'
+import { useAppStore } from '../stores/appStore'
 import { useI18n } from 'vue-i18n'
 
 export default {
@@ -437,6 +437,7 @@ export default {
     }
 
     return {
+      store,
       activeTab,
       // Datos paginados para las tablas
       citasPaginadas,

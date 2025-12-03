@@ -5,6 +5,12 @@
         <div class="hero-content">
           <h2>{{ $t('home.welcome') }}</h2>
           <p>{{ $t('home.description') }}</p>
+          <!-- ✅ AGREGAR INFO DEL USUARIO -->
+          <div class="user-welcome" v-if="user">
+            <p><strong>Bienvenido:</strong> {{ user.nom_usuario }}</p>
+            <p><strong>Rol:</strong> {{ user.rol_usuario }}</p>
+            <button @click="logout" class="btn-logout">Cerrar Sesión</button>
+          </div>
         </div>
       </div>
     </section>
@@ -14,12 +20,21 @@
         <div class="features-grid" v-if="isCliente">
           <div class="feature-card">
             <img src="@/assets/camilla.jpg" alt="Camilla de spa" class="feature-image" />
+            <h3>Tratamientos Relajantes</h3>
+            <p>Disfruta de nuestros mejores tratamientos de spa</p>
+            <router-link to="/tratamientos" class="btn-link">Ver Tratamientos</router-link>
           </div>
           <div class="feature-card">
             <img src="@/assets/piedras.jpg" alt="Masaje con piedras" class="feature-image" />
+            <h3>Paquetes Especiales</h3>
+            <p>Descubre nuestros paquetes promocionales</p>
+            <router-link to="/paquetes" class="btn-link">Ver Paquetes</router-link>
           </div>
           <div class="feature-card">
             <img src="@/assets/toalla.jpg" alt="Toalla y flores relajantes" class="feature-image" />
+            <h3>Reserva tu Cita</h3>
+            <p>Agenda tu tratamiento favorito</p>
+            <router-link to="/reservar-cita" class="btn-link">Reservar Cita</router-link>
           </div>
         </div>
 
@@ -29,6 +44,25 @@
             <p>{{ $t('home.adminDescription') }}</p>
             <router-link to="/admin" class="btn-link">{{ $t('home.goToPanel') }}</router-link>
           </div>
+          <div class="feature-card">
+            <h3>Gestión de Usuarios</h3>
+            <p>Administra los usuarios del sistema</p>
+            <router-link to="/admin/users" class="btn-link">Gestionar Usuarios</router-link>
+          </div>
+          <div class="feature-card">
+            <h3>Reportes</h3>
+            <p>Visualiza reportes y estadísticas</p>
+            <router-link to="/admin/reports" class="btn-link">Ver Reportes</router-link>
+          </div>
+        </div>
+
+        <!-- ✅ DEBUG TEMPORAL -->
+        <div class="debug-info" v-if="showDebug">
+          <h3>🔧 Información de Debug</h3>
+          <p><strong>Usuario:</strong> {{ user }}</p>
+          <p><strong>Store Auth:</strong> {{ store?.auth }}</p>
+          <p><strong>isCliente:</strong> {{ isCliente }}</p>
+          <p><strong>isAdmin:</strong> {{ isAdmin }}</p>
         </div>
       </div>
     </section>
@@ -36,21 +70,66 @@
 </template>
 
 <script>
-import { computed } from 'vue'
-import { useAppStore } from '@/stores/appStore'
+import { computed, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAppStore } from '@/stores/appStore' // ✅ IMPORTAR EL STORE
 
 export default {
   name: 'Home',
   setup() {
-    const store = useAppStore()
-    const isCliente = computed(() => store.isCliente)
-    const isAdmin = computed(() => store.isAdmin)
+    const router = useRouter()
+    const store = useAppStore() // ✅ USAR EL STORE
+    const user = ref(null)
+    const showDebug = ref(true) // ✅ TEMPORAL PARA DEBUG
+
+    // Obtener usuario de localStorage
+    onMounted(() => {
+      console.log('🏠 Home - Montando componente')
+      
+      const savedUser = localStorage.getItem('user')
+      if (savedUser) {
+        user.value = JSON.parse(savedUser)
+        console.log('✅ Home - Usuario cargado:', user.value)
+        
+        // ✅ SINCRONIZAR STORE CON LOCALSTORAGE
+        if (store && store.auth) {
+          store.auth.user = user.value
+          store.auth.isAuthenticated = true
+          console.log('✅ Store sincronizado con localStorage')
+        }
+      } else {
+        console.log('❌ No hay usuario - Redirigiendo a login')
+        router.push('/login')
+      }
+    })
+
+    // Computed properties
+    const isCliente = computed(() => {
+      return user.value?.rol_usuario === 'cliente'
+    })
+
+    const isAdmin = computed(() => {
+      return user.value?.rol_usuario === 'admin'
+    })
+
+    const logout = () => {
+      localStorage.removeItem('user')
+      localStorage.removeItem('token')
+      if (store && store.auth) {
+        store.auth.user = null
+        store.auth.isAuthenticated = false
+      }
+      router.push('/login')
+    }
 
     return {
+      user,
       isCliente,
-      isAdmin
+      isAdmin,
+      logout,
+      showDebug,
+      store // ✅ EXPORTAR STORE PARA DEBUG
     }
-    // ✅ NO necesita importar i18n aquí
   }
 }
 </script>
@@ -75,6 +154,28 @@ export default {
   margin: 0 auto clamp(1rem, 4vw, 2rem);
   color: #666;
   line-height: 1.6;
+}
+
+.user-welcome {
+  background: rgba(162, 210, 255, 0.2);
+  padding: 1rem;
+  border-radius: 10px;
+  margin-top: 1rem;
+  border-left: 4px solid #a2d2ff;
+}
+
+.btn-logout {
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.btn-logout:hover {
+  background: #ff5252;
 }
 
 .features {
@@ -134,6 +235,7 @@ export default {
   object-fit: cover;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   max-height: min(300px, 50vw);
+  margin-bottom: 1rem;
 }
 
 .btn-link {
@@ -151,6 +253,26 @@ export default {
 .btn-link:hover {
   background: #e55a82;
   transform: translateY(-2px);
+}
+
+.debug-info {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 2rem;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.debug-info h3 {
+  color: #856404;
+  margin-bottom: 0.5rem;
+}
+
+.debug-info p {
+  margin: 0.25rem 0;
+  color: #666;
 }
 
 /* Ajuste para una sola tarjeta en admin */

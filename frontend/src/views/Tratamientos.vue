@@ -259,11 +259,13 @@
                   <div class="form-grid">
                     <div class="form-group">
                       <label for="nuevaAreaNombre">Nombre del Área *:</label>
-                      <input type="text" id="nuevaAreaNombre" v-model="nuevaAreaForm.nombre_area" class="form-input" placeholder="Ej: Masajes, Faciales, etc.">
+                      <input type="text" id="nuevaAreaNombre" v-model="nuevaAreaForm.nombre_area" class="form-input"
+                        placeholder="Ej: Masajes, Faciales, etc.">
                     </div>
                     <div class="form-group">
                       <label for="nuevaAreaPersonal">Personal Fijo *:</label>
-                      <input type="number" id="nuevaAreaPersonal" v-model="nuevaAreaForm.cantidad_personal_fijo" class="form-input" min="1" placeholder="Cantidad de personal">
+                      <input type="number" id="nuevaAreaPersonal" v-model="nuevaAreaForm.cantidad_personal_fijo"
+                        class="form-input" min="1" placeholder="Cantidad de personal">
                     </div>
                   </div>
                   <div class="area-actions">
@@ -285,27 +287,32 @@
 
               <div class="form-group full-width">
                 <label for="descripcion">Descripción *:</label>
-                <textarea id="descripcion" v-model="tratamientoForm.descripcion" required class="form-input" rows="3" placeholder="Describe el tratamiento..."></textarea>
+                <textarea id="descripcion" v-model="tratamientoForm.descripcion" required class="form-input" rows="3"
+                  placeholder="Describe el tratamiento..."></textarea>
               </div>
 
               <div class="form-group">
                 <label for="duracion">Duración (minutos) *:</label>
-                <input type="number" id="duracion" v-model="tratamientoForm.duracion" required class="form-input" min="5" placeholder="0">
+                <input type="number" id="duracion" v-model="tratamientoForm.duracion" required class="form-input"
+                  min="5" placeholder="0">
               </div>
 
               <div class="form-group">
                 <label for="precio">Precio ($) *:</label>
-                <input type="number" id="precio" v-model="tratamientoForm.precio" required class="form-input" min="0" step="0.01" placeholder="0.00">
+                <input type="number" id="precio" v-model="tratamientoForm.precio" required class="form-input" min="0"
+                  step="0.01" placeholder="0.00">
               </div>
 
               <div class="form-group">
                 <label for="frecuencia">Frecuencia Mensual:</label>
-                <input type="number" id="frecuencia" v-model="tratamientoForm.frecuencia_mensual" class="form-input" min="0" placeholder="Opcional">
+                <input type="number" id="frecuencia" v-model="tratamientoForm.frecuencia_mensual" class="form-input"
+                  min="0" placeholder="Opcional">
               </div>
 
               <div class="form-group full-width">
                 <label for="materiales">Materiales Necesarios:</label>
-                <textarea id="materiales" v-model="tratamientoForm.materiales_necesarios" class="form-input" rows="3" placeholder="Lista de materiales separados por coma (opcional)"></textarea>
+                <textarea id="materiales" v-model="tratamientoForm.materiales_necesarios" class="form-input" rows="3"
+                  placeholder="Lista de materiales separados por coma (opcional)"></textarea>
               </div>
             </div>
 
@@ -324,18 +331,23 @@
 
 <script>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useAppStore } from '@/stores/appStore'
+import { useAppStore } from '../stores/appStore'
 import { useRouter } from 'vue-router'
+
+// URL base de tu API NestJS
+const API_BASE_URL = 'http://localhost:5000'
 
 export default {
   name: 'Tratamientos',
   setup() {
-    const store = useAppStore()
     const router = useRouter()
+    const store = useAppStore()
     const tratamientos = ref([])
     const cargando = ref(false)
-    const isCliente = computed(() => store.isCliente)
-    const isAdmin = computed(() => store.isAdmin)
+
+    // Roles - puedes obtener esto de tu sistema de autenticación
+    const isCliente = ref(true) // Cambiar según tu lógica de auth
+    const isAdmin = ref(true)   // Cambiar según tu lógica de auth
 
     // Variables de paginación
     const currentPage = ref(1)
@@ -357,7 +369,7 @@ export default {
       nombre_tratamiento: '',
       categoria: '',
       descripcion: '',
-      duracion: 0,
+      duracion: 30,
       precio: 0,
       frecuencia_mensual: 0,
       materiales_necesarios: ''
@@ -372,65 +384,81 @@ export default {
       cantidad_personal_fijo: 1
     })
 
-    // Cargar tratamientos desde la base de datos - CORREGIDO
+    // Cargar tratamientos desde la API
+    // En Tratamientos.vue - modifica cargarTratamientos
+    // En la función cargarTratamientos - CORREGIR el mapeo
     const cargarTratamientos = async () => {
       cargando.value = true
       try {
-        const response = await fetch('http://localhost:5000/tratamientos')
+        const response = await fetch(`${API_BASE_URL}/tratamientos`)
+        console.log('📤 Response status:', response.status)
+
         if (response.ok) {
           const datos = await response.json()
-          console.log('Tratamientos cargados:', datos) // Debug
-          tratamientos.value = datos
+          console.log('📥 Datos CRUDOS recibidos:', datos)
+
+          // 🔄 CORRECCIÓN: Usar los nombres de campo que llegan del backend
+          tratamientos.value = datos.map(item => ({
+            codigo_tratamiento: item.cod_trat || item.codigo_tratamiento,
+            nombre_tratamiento: item.nom_trat || item.nombre_tratamiento,
+            categoria: item.categoria,
+            descripcion: item.descripcion,
+            duracion: Number(item.duracion) || 0,
+            precio: Number(item.precio) || 0,
+            frecuencia_mensual: item.frecuencia_mensual ? Number(item.frecuencia_mensual) : null,
+            materiales_necesarios: item.materiales_necesarios || ''
+          }))
+
+          console.log('✅ Tratamientos transformados:', tratamientos.value)
         } else {
-          console.error('Error al cargar tratamientos:', response.statusText)
+          console.error('❌ Error response:', await response.text())
         }
       } catch (error) {
-        console.error('Error al conectar con el servidor:', error)
+        console.error('🔥 Error:', error)
       } finally {
         cargando.value = false
       }
     }
 
-    // Cargar áreas existentes - CORREGIDO
-    // Cargar áreas existentes - CORREGIDO
-const cargarAreas = async () => {
-  try {
-    const response = await fetch('http://localhost:5000/areas')
-    if (response.ok) {
-      const datos = await response.json()
-      console.log('Respuesta cruda de áreas:', datos) // Debug
-      
-      // Manejar el formato de respuesta diferente
-      if (Array.isArray(datos)) {
-        // Si es un array directo
-        areasExistentes.value = datos
-      } else if (datos.obtener_areas && Array.isArray(datos.obtener_areas)) {
-        // Si viene dentro de la propiedad obtener_areas
-        areasExistentes.value = datos.obtener_areas
-      } else if (datos.obtener_areas) {
-        // Si obtener_areas no es un array pero existe, intentar convertirlo
-        console.log('Formato inesperado de obtener_areas:', datos.obtener_areas)
-        // Intentar extraer las áreas del objeto
-        areasExistentes.value = Object.values(datos.obtener_areas).filter(item => 
-          item && typeof item === 'object' && item.nombre_area
-        )
-      } else {
-        console.error('Formato de respuesta no reconocido:', datos)
+    // Cargar áreas existentes desde la API
+    // En la función cargarAreas - CORREGIR también
+    const cargarAreas = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/areas`)
+        if (response.ok) {
+          const datos = await response.json()
+          console.log('Respuesta cruda de áreas:', datos)
+
+          // 🔄 SIMPLIFICAR: El backend parece devolver directamente el array
+          if (Array.isArray(datos)) {
+            // Si el backend devuelve un array directo
+            areasExistentes.value = datos.map(area => ({
+              nombre_area: area.nombre_area || area.nombre,
+              cantidad_personal_fijo: area.cantidad_personal_fijo || area.personal
+            }))
+          } else if (datos.obtener_areas && Array.isArray(datos.obtener_areas)) {
+            // Si el backend devuelve { obtener_areas: [...] }
+            areasExistentes.value = datos.obtener_areas.map(area => ({
+              nombre_area: area.nombre_area || area.nombre,
+              cantidad_personal_fijo: area.cantidad_personal_fijo || area.personal
+            }))
+          } else {
+            console.error('Formato de respuesta no reconocido:', datos)
+            areasExistentes.value = []
+          }
+
+          console.log('Áreas procesadas:', areasExistentes.value)
+        } else {
+          console.error('Error al cargar áreas:', response.statusText)
+          areasExistentes.value = []
+        }
+      } catch (error) {
+        console.error('Error al conectar con el servidor para áreas:', error)
         areasExistentes.value = []
       }
-      
-      console.log('Áreas procesadas:', areasExistentes.value) // Debug
-    } else {
-      console.error('Error al cargar áreas:', response.statusText)
-      areasExistentes.value = []
     }
-  } catch (error) {
-    console.error('Error al conectar con el servidor para áreas:', error)
-    areasExistentes.value = []
-  }
-}
 
-    // Crear nueva área - CORREGIDO
+    // Crear nueva área
     const crearNuevaArea = async () => {
       if (!nuevaAreaForm.value.nombre_area || !nuevaAreaForm.value.cantidad_personal_fijo) {
         alert('Por favor complete todos los campos del área')
@@ -439,7 +467,7 @@ const cargarAreas = async () => {
 
       procesandoArea.value = true
       try {
-        const response = await fetch('http://localhost:5000/areas', {
+        const response = await fetch(`${API_BASE_URL}/areas`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -448,8 +476,8 @@ const cargarAreas = async () => {
         })
 
         if (response.ok) {
-          await cargarAreas() // Recargar áreas
-          tratamientoForm.value.categoria = nuevaAreaForm.value.nombre_area // Seleccionar nueva área
+          await cargarAreas()
+          tratamientoForm.value.categoria = nuevaAreaForm.value.nombre_area
           nuevaAreaForm.value = { nombre_area: '', cantidad_personal_fijo: 1 }
           mostrarCrearArea.value = false
           alert('Área creada exitosamente')
@@ -470,14 +498,13 @@ const cargarAreas = async () => {
       nuevaAreaForm.value = { nombre_area: '', cantidad_personal_fijo: 1 }
     }
 
-    // Crear tratamiento - CORREGIDO
+    // Crear tratamiento
     const crearTratamiento = async () => {
       if (!tratamientoForm.value.categoria) {
         alert('Por favor seleccione una categoría (área)')
         return
       }
 
-      // Validar que la categoría seleccionada existe
       const areaExiste = areasExistentes.value.some(area => area.nombre_area === tratamientoForm.value.categoria)
       if (!areaExiste) {
         alert('La categoría seleccionada no existe. Por favor seleccione una categoría válida.')
@@ -494,9 +521,9 @@ const cargarAreas = async () => {
           materiales_necesarios: tratamientoForm.value.materiales_necesarios || null
         }
 
-        console.log('Enviando datos del tratamiento:', tratamientoData) // Debug
+        console.log('Enviando datos del tratamiento:', tratamientoData)
 
-        const response = await fetch('http://localhost:5000/tratamientos', {
+        const response = await fetch(`${API_BASE_URL}/tratamientos`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -520,9 +547,8 @@ const cargarAreas = async () => {
       }
     }
 
-    // Actualizar tratamiento - CORREGIDO
+    // Actualizar tratamiento
     const actualizarTratamiento = async () => {
-      // Validar que la categoría seleccionada existe
       const areaExiste = areasExistentes.value.some(area => area.nombre_area === tratamientoForm.value.categoria)
       if (!areaExiste) {
         alert('La categoría seleccionada no existe. Por favor seleccione una categoría válida.')
@@ -539,9 +565,9 @@ const cargarAreas = async () => {
           materiales_necesarios: tratamientoForm.value.materiales_necesarios || null
         }
 
-        console.log('Actualizando tratamiento:', tratamientoData) // Debug
+        console.log('Actualizando tratamiento:', tratamientoData)
 
-        const response = await fetch(`http://localhost:5000/tratamientos/${tratamientoForm.value.codigo_tratamiento}`, {
+        const response = await fetch(`${API_BASE_URL}/tratamientos/${tratamientoForm.value.codigo_tratamiento}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -569,7 +595,7 @@ const cargarAreas = async () => {
     const eliminarTratamiento = async (tratamiento) => {
       if (confirm(`¿Estás seguro de que quieres eliminar el tratamiento "${tratamiento.nombre_tratamiento}"?`)) {
         try {
-          const response = await fetch(`http://localhost:5000/tratamientos/${tratamiento.codigo_tratamiento}`, {
+          const response = await fetch(`${API_BASE_URL}/tratamientos/${tratamiento.codigo_tratamiento}`, {
             method: 'DELETE'
           })
 
@@ -586,14 +612,14 @@ const cargarAreas = async () => {
       }
     }
 
-    // Modal functions - CORREGIDO
+    // Modal functions
     const mostrarModalCrear = () => {
       tratamientoForm.value = {
         codigo_tratamiento: '',
         nombre_tratamiento: '',
         categoria: '',
         descripcion: '',
-        duracion: 0, // Valor por defecto más realista
+        duracion: 30,
         precio: 0,
         frecuencia_mensual: 0,
         materiales_necesarios: ''
@@ -604,9 +630,8 @@ const cargarAreas = async () => {
     }
 
     const mostrarModalActualizar = (tratamiento) => {
-      tratamientoForm.value = { 
+      tratamientoForm.value = {
         ...tratamiento,
-        // Asegurar que los valores numéricos sean números
         duracion: parseInt(tratamiento.duracion) || 0,
         precio: parseFloat(tratamiento.precio) || 0,
         frecuencia_mensual: parseInt(tratamiento.frecuencia_mensual) || 0
@@ -632,28 +657,17 @@ const cargarAreas = async () => {
       nuevaAreaForm.value = { nombre_area: '', cantidad_personal_fijo: 1 }
     }
 
-    // Computed properties - CORREGIDAS
-    const categoriasUnicas = computed(() => {
-      // Obtener categorías únicas de los tratamientos
-      const categorias = [...new Set(tratamientos.value.map(t => t.categoria))]
-      console.log('Categorías únicas encontradas:', categorias) // Debug
-      return categorias
-    })
-
+    // Computed properties
     const tratamientosFiltrados = computed(() => {
       let filtered = [...tratamientos.value]
 
-      console.log('Filtrando tratamientos. Total:', filtered.length) // Debug
-
       if (filtroCategoria.value) {
         filtered = filtered.filter(t => t.categoria === filtroCategoria.value)
-        console.log('Después de filtrar por categoría:', filtered.length) // Debug
       }
 
       if (filtroPrecio.value) {
         const [min, max] = filtroPrecio.value.split('-').map(Number)
         filtered = filtered.filter(t => t.precio >= min && t.precio <= max)
-        console.log('Después de filtrar por precio:', filtered.length) // Debug
       }
 
       if (busqueda.value) {
@@ -662,7 +676,6 @@ const cargarAreas = async () => {
           t.nombre_tratamiento.toLowerCase().includes(searchTerm) ||
           t.descripcion.toLowerCase().includes(searchTerm)
         )
-        console.log('Después de filtrar por búsqueda:', filtered.length) // Debug
       }
 
       return filtered
@@ -780,7 +793,7 @@ const cargarAreas = async () => {
       resetPagination()
     })
 
-    // Métodos existentes - CORREGIDOS
+    // Métodos existentes
     const ordenarPor = (campo) => {
       if (ordenCampo.value === campo) {
         ordenDireccion.value = ordenDireccion.value === 'asc' ? 'desc' : 'asc'
@@ -813,18 +826,24 @@ const cargarAreas = async () => {
       resetPagination()
     }
 
+    // MODIFICADO: Pasar datos por ruta en lugar de usar store
     const irAReserva = (tratamiento) => {
-      store.seleccionarTratamiento(tratamiento)
-      router.push({ name: 'ReservarCita' })
+      router.push({
+        name: 'ReservarCita',
+        query: {
+          tratamiento: JSON.stringify(tratamiento)
+        }
+      })
     }
 
     onMounted(() => {
-      console.log('Componente montado - Cargando datos...') // Debug
+      console.log('Componente montado - Cargando datos...')
       cargarTratamientos()
       cargarAreas()
     })
 
     return {
+      store,
       tratamientosPaginados,
       isCliente,
       isAdmin,
@@ -835,44 +854,36 @@ const cargarAreas = async () => {
       ordenCampo,
       ordenDireccion,
       areasExistentes,
-      categoriasUnicas,
       tratamientosFiltrados,
       precioMinimo,
       precioMaximo,
-      // Modal y formularios
       mostrarModal,
       esActualizacion,
       tratamientoForm,
       procesando,
-      // Gestión de áreas
       mostrarCrearArea,
       nuevaAreaForm,
       procesandoArea,
-      // Variables de paginación
       currentPage,
       itemsPerPage,
       totalPages,
       startItem,
       endItem,
       visiblePages,
-      // Métodos de paginación
       nextPage,
       previousPage,
       goToPage,
       resetPagination,
-      // Métodos existentes
       ordenarPor,
       getColorCategoria,
       limpiarFiltros,
       irAReserva,
-      // Métodos CRUD
       mostrarModalCrear,
       mostrarModalActualizar,
       cerrarModal,
       crearTratamiento,
       actualizarTratamiento,
       eliminarTratamiento,
-      // Métodos de áreas
       crearNuevaArea,
       cancelarCrearArea
     }

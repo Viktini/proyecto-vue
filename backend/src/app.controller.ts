@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) { }
 
   @Get()
   getHello(): string {
@@ -21,6 +21,28 @@ export class AppController {
       environment: process.env.NODE_ENV || 'development',
       database: 'PostgreSQL',
       framework: 'NestJS'
+    };
+  }
+
+  // app.controller.ts
+  @Get('modules-status')
+  getModulesStatus() {
+    return {
+      status: 'Backend funcionando',
+      modules: {
+        usuarios: 'Cargado ✓',
+        tratamientos: 'Cargado ✓',
+        areas: 'Cargado ✓',
+        paquetes: 'Cargado ✓'
+      },
+      timestamp: new Date().toISOString(),
+      availableEndpoints: [
+        'GET /health',
+        'GET /modules-status',
+        'POST /api/usuarios/register',
+        'POST /api/usuarios/login',
+        'GET /api/usuarios/test'
+      ]
     };
   }
 

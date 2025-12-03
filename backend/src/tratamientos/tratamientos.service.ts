@@ -1,9 +1,11 @@
 // tratamientos.service.ts - CORREGIDO
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Logger, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tratamiento } from './entities/tratamiento.entity';
-import { AreasService } from '../areas/areas.service'; // Importar correctamente
+import { AreasService } from '../areas/areas.service';
+import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
+import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
 
 @Injectable()
 export class TratamientosService {
@@ -12,28 +14,59 @@ export class TratamientosService {
   constructor(
     @InjectRepository(Tratamiento)
     private tratamientosRepository: Repository<Tratamiento>,
-    private areasService: AreasService // Inyectar el servicio de áreas
-  ) {}
+    private areasService: AreasService
+  ) { }
 
-  async getTratamientos(): Promise<Tratamiento[]> {
-    try {
-      this.logger.log('Obteniendo tratamientos...');
-      
-      const tratamientos = await this.tratamientosRepository.find({
-        order: { codigo_tratamiento: 'ASC' }
+  // En tratamientos.service.ts - método getTratamientos
+  // tratamientos.service.ts - CORRIGE el método getTratamientos
+async getTratamientos(): Promise<Tratamiento[]> {
+  try {
+    this.logger.log('Obteniendo tratamientos...');
+    
+    // Usa getRawAndEntities para debug
+    const queryBuilder = this.tratamientosRepository
+      .createQueryBuilder('tratamiento')
+      .orderBy('tratamiento.codigo_tratamiento', 'ASC');
+    
+    // Ejecutar y transformar explícitamente
+    const tratamientos = await queryBuilder.getMany();
+    
+    this.logger.log(`✅ Se encontraron ${tratamientos.length} tratamientos`);
+    
+    // 🔍 DEBUG: Mostrar estructura real
+    if (tratamientos.length > 0) {
+      const primerTratamiento = tratamientos[0];
+      console.log('🔍 Estructura del primer tratamiento:', {
+        keys: Object.keys(primerTratamiento),
+        values: primerTratamiento,
+        tipo: typeof primerTratamiento
       });
       
-      this.logger.log(`✅ Se encontraron ${tratamientos.length} tratamientos`);
-      return tratamientos;
+      // Asegurar que los campos están correctamente mapeados
+      const tratamientosTransformados = tratamientos.map(tratamiento => ({
+        codigo_tratamiento: tratamiento.codigo_tratamiento,
+        nombre_tratamiento: tratamiento.nombre_tratamiento,
+        categoria: tratamiento.categoria,
+        descripcion: tratamiento.descripcion,
+        duracion: tratamiento.duracion,
+        precio: tratamiento.precio,
+        frecuencia_mensual: tratamiento.frecuencia_mensual,
+        materiales_necesarios: tratamiento.materiales_necesarios
+      }));
       
-    } catch (error) {
-      this.logger.error('Error al obtener tratamientos:', error);
-      throw new HttpException(
-        'Error al obtener tratamientos: ' + error.message,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      return tratamientosTransformados;
     }
+    
+    return tratamientos;
+    
+  } catch (error) {
+    this.logger.error('Error al obtener tratamientos:', error);
+    throw new HttpException(
+      'Error al obtener tratamientos: ' + error.message,
+      HttpStatus.INTERNAL_SERVER_ERROR
+    );
   }
+}
 
   async getCategoriasValidas(): Promise<string[]> {
     try {
@@ -45,26 +78,17 @@ export class TratamientosService {
     }
   }
 
-  async createTratamiento(tratamientoData: any): Promise<any> {
+  async createTratamiento(createTratamientoDto: CreateTratamientoDto): Promise<any> {
     try {
-      this.logger.log('➕ Creando tratamiento:', tratamientoData);
-
-      // Validar datos requeridos
-      if (!tratamientoData.nombre_tratamiento || !tratamientoData.categoria || 
-          !tratamientoData.descripcion || !tratamientoData.duracion || !tratamientoData.precio) {
-        throw new HttpException(
-          'Faltan campos requeridos: nombre, categoría, descripción, duración y precio',
-          HttpStatus.BAD_REQUEST
-        );
-      }
+      this.logger.log('➕ Creando tratamiento:', createTratamientoDto);
 
       // Obtener categorías válidas (áreas existentes)
       const categoriasValidas = await this.getCategoriasValidas();
-      
+
       // Validar que la categoría sea un área existente
-      if (!categoriasValidas.includes(tratamientoData.categoria)) {
+      if (!categoriasValidas.includes(createTratamientoDto.categoria)) {
         throw new HttpException(
-          `Categoría inválida. El área "${tratamientoData.categoria}" no existe. Áreas disponibles: ${categoriasValidas.join(', ')}`,
+          `Categoría inválida. El área "${createTratamientoDto.categoria}" no existe. Áreas disponibles: ${categoriasValidas.join(', ')}`,
           HttpStatus.BAD_REQUEST
         );
       }
@@ -74,7 +98,7 @@ export class TratamientosService {
         .createQueryBuilder('tratamiento')
         .orderBy('tratamiento.codigo_tratamiento', 'DESC')
         .getOne();
-      
+
       let nextCode = 'T001';
       if (lastTreatment && lastTreatment.codigo_tratamiento) {
         const lastNumber = parseInt(lastTreatment.codigo_tratamiento.substring(1)) || 0;
@@ -84,20 +108,20 @@ export class TratamientosService {
       // Crear tratamiento con TypeORM
       const nuevoTratamiento = this.tratamientosRepository.create({
         codigo_tratamiento: nextCode,
-        nombre_tratamiento: tratamientoData.nombre_tratamiento,
-        categoria: tratamientoData.categoria,
-        descripcion: tratamientoData.descripcion,
-        duracion: parseFloat(tratamientoData.duracion),
-        precio: parseFloat(tratamientoData.precio),
-        frecuencia_mensual: tratamientoData.frecuencia_mensual ? parseInt(tratamientoData.frecuencia_mensual) : null,
-        materiales_necesarios: tratamientoData.materiales_necesarios || null
+        nombre_tratamiento: createTratamientoDto.nombre_tratamiento,
+        categoria: createTratamientoDto.categoria,
+        descripcion: createTratamientoDto.descripcion,
+        duracion: createTratamientoDto.duracion,
+        precio: createTratamientoDto.precio,
+        frecuencia_mensual: createTratamientoDto.frecuencia_mensual || null,
+        materiales_necesarios: createTratamientoDto.materiales_necesarios || null
       });
 
       const tratamientoGuardado = await this.tratamientosRepository.save(nuevoTratamiento);
-      
+
       this.logger.log('✅ Tratamiento creado exitosamente');
-      
-      return { 
+
+      return {
         success: true,
         message: 'Tratamiento creado exitosamente',
         tratamiento: tratamientoGuardado
@@ -105,7 +129,7 @@ export class TratamientosService {
 
     } catch (error) {
       this.logger.error('💥 ERROR al crear tratamiento:', error);
-      
+
       if (error instanceof HttpException) {
         throw error;
       }
@@ -117,32 +141,62 @@ export class TratamientosService {
     }
   }
 
-  async updateTratamiento(codigo: string, tratamientoData: any): Promise<any> {
+  async updateTratamiento(codigo: string, updateTratamientoDto: UpdateTratamientoDto): Promise<any> {
     try {
       this.logger.log(`✏️ Actualizando tratamiento ${codigo}`);
 
-      const result = await this.tratamientosRepository.query(
-        `SELECT actualizar_tratamiento($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          codigo,
-          tratamientoData.nombre_tratamiento,
-          tratamientoData.categoria,
-          tratamientoData.descripcion,
-          parseFloat(tratamientoData.duracion),
-          parseFloat(tratamientoData.precio),
-          tratamientoData.frecuencia_mensual ? parseInt(tratamientoData.frecuencia_mensual) : null,
-          tratamientoData.materiales_necesarios || null
-        ]
+      // Verificar si el tratamiento existe
+      const tratamientoExistente = await this.tratamientosRepository.findOne({
+        where: { codigo_tratamiento: codigo }
+      });
+
+      if (!tratamientoExistente) {
+        throw new NotFoundException(`Tratamiento con código ${codigo} no encontrado`);
+      }
+
+      // Validar categoría si se está actualizando
+      if (updateTratamientoDto.categoria) {
+        const categoriasValidas = await this.getCategoriasValidas();
+        if (!categoriasValidas.includes(updateTratamientoDto.categoria)) {
+          throw new HttpException(
+            `Categoría inválida. El área "${updateTratamientoDto.categoria}" no existe.`,
+            HttpStatus.BAD_REQUEST
+          );
+        }
+      }
+
+      // Actualizar tratamiento
+      await this.tratamientosRepository.update(
+        { codigo_tratamiento: codigo },
+        {
+          ...updateTratamientoDto,
+          // Asegurar que los valores numéricos sean correctos
+          duracion: updateTratamientoDto.duracion ? Number(updateTratamientoDto.duracion) : undefined,
+          precio: updateTratamientoDto.precio ? Number(updateTratamientoDto.precio) : undefined,
+          frecuencia_mensual: updateTratamientoDto.frecuencia_mensual ? Number(updateTratamientoDto.frecuencia_mensual) : undefined
+        }
       );
 
-      this.logger.log('✅ Tratamiento actualizado con función PostgreSQL');
+      // Obtener el tratamiento actualizado
+      const tratamientoActualizado = await this.tratamientosRepository.findOne({
+        where: { codigo_tratamiento: codigo }
+      });
+
+      this.logger.log('✅ Tratamiento actualizado exitosamente');
+
       return {
         success: true,
-        message: 'Tratamiento actualizado exitosamente'
+        message: 'Tratamiento actualizado exitosamente',
+        tratamiento: tratamientoActualizado
       };
 
     } catch (error) {
       this.logger.error('Error al actualizar tratamiento:', error);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new HttpException(
         'Error al actualizar tratamiento: ' + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -154,12 +208,20 @@ export class TratamientosService {
     try {
       this.logger.log(`🗑️ Eliminando tratamiento ${codigo}`);
 
-      const result = await this.tratamientosRepository.query(
-        `SELECT eliminar_tratamiento($1)`,
-        [codigo]
-      );
+      // Verificar si el tratamiento existe
+      const tratamientoExistente = await this.tratamientosRepository.findOne({
+        where: { codigo_tratamiento: codigo }
+      });
 
-      this.logger.log('✅ Tratamiento eliminado con función PostgreSQL');
+      if (!tratamientoExistente) {
+        throw new NotFoundException(`Tratamiento con código ${codigo} no encontrado`);
+      }
+
+      // Eliminar tratamiento
+      await this.tratamientosRepository.delete({ codigo_tratamiento: codigo });
+
+      this.logger.log('✅ Tratamiento eliminado exitosamente');
+
       return {
         success: true,
         message: 'Tratamiento eliminado exitosamente'
@@ -167,6 +229,11 @@ export class TratamientosService {
 
     } catch (error) {
       this.logger.error('Error al eliminar tratamiento:', error);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new HttpException(
         'Error al eliminar tratamiento: ' + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR

@@ -1,24 +1,24 @@
-// src/tratamientos/entities/tratamiento.entity.ts - CORREGIDO
+// tratamiento.entity.ts
 import { Entity, Column, PrimaryColumn } from 'typeorm';
 
 @Entity('tratamiento') 
 export class Tratamiento {
-  @PrimaryColumn({ name: 'cod_trat' })
+  @PrimaryColumn({ name: 'cod_trat', type: 'varchar', length: 10 })
   codigo_tratamiento: string;
 
-  @Column({ name: 'nom_trat' })
+  @Column({ name: 'nom_trat', type: 'varchar', length: 255, nullable: false })
   nombre_tratamiento: string;
 
-  @Column({ name: 'categoria' }) // Si es un campo de texto directo
+  @Column({ name: 'categoria', type: 'varchar', length: 100, nullable: false })
   categoria: string;
 
-  @Column('text')
+  @Column({ name: 'descripcion', type: 'text' })
   descripcion: string;
 
-  @Column('int')
+  @Column({ name: 'duracion', type: 'int' })
   duracion: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column({ name: 'precio', type: 'decimal', precision: 10, scale: 2 })
   precio: number;
 
   @Column({ name: 'frecuencia_mensual', type: 'int', nullable: true })

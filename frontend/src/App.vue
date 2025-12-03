@@ -10,10 +10,10 @@
 
 <script>
 import { computed, onMounted } from 'vue'
-import { useAppStore } from '@/stores/appStore'
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
 import { useI18nComposable } from './composables/useI18n'
+import { useAppStore } from './stores/appStore' // ✅ AGREGAR ESTA IMPORTACIÓN
 
 export default {
   name: 'App',
@@ -22,13 +22,21 @@ export default {
     Footer
   },
   setup() {
-    const store = useAppStore()
-    const { initLanguage } = useI18nComposable() // ← Cambiar nombre
+    const store = useAppStore() // ✅ AHORA ESTA FUNCIÓN EXISTE
+    const { initLanguage } = useI18nComposable()
 
     const isAuthenticated = computed(() => store.auth.isAuthenticated)
 
     onMounted(() => {
+      store.inicializarDesdeLocalStorage() // ✅ INICIALIZAR STORE DESDE LOCALSTORAGE
       initLanguage()
+
+      // Cargar datos iniciales si está autenticado
+      if (isAuthenticated.value) {
+        store.cargarTratamientos()
+        store.cargarAreas()
+        store.cargarPaquetes()
+      }
     })
 
     return {
@@ -232,7 +240,4 @@ body {
     font-size: 0.8rem;
   }
 }
-
-
-
 </style>

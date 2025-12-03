@@ -1,6 +1,4 @@
-// router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAppStore } from '../stores/appStore'
 
 // Componentes
 import Login from '../components/Login.vue'
@@ -22,25 +20,25 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login,
-    meta: { requiresAuth: false }  // ← PÚBLICA
+    meta: { requiresAuth: false }
   },
   {
     path: '/home',
     name: 'Home',
     component: Home,
-    meta: { requiresAuth: true }  // ← PÚBLICA
+    meta: { requiresAuth: true }
   },
   {
     path: '/tratamientos',
     name: 'Tratamientos',
     component: Tratamientos,
-    meta: { requiresAuth: true }   // ← PRIVADA
+    meta: { requiresAuth: true }
   },
   {
     path: '/paquetes',
     name: 'Paquetes',
     component: Paquetes,
-    meta: { requiresAuth: true }   // ← PRIVADA
+    meta: { requiresAuth: true }
   },
   {
     path: '/reservar-cita',
@@ -79,20 +77,48 @@ const router = createRouter({
   routes
 })
 
+// ✅ GUARD SIMPLIFICADO - SIN DEPENDER DEL STORE
 router.beforeEach((to, from, next) => {
-  const store = useAppStore()
-  const isAuthenticated = store.auth.isAuthenticated
-  const userRole = store.auth.role
-
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    // Redirigir a login si no está autenticado
-    next('/login')
-  } else if (to.meta.requiresAuth && to.meta.role && to.meta.role !== userRole) {
-    // Redirigir a home si no tiene el rol necesario
-    next('/')
-  } else {
-    next()
+  console.log('🛡️ Router guard - Verificando ruta:', to.path)
+  
+  // Obtener datos de autenticación directamente de localStorage
+  const userData = localStorage.getItem('user')
+  const isAuthenticated = !!userData
+  let userRole = null
+  
+  if (userData) {
+    try {
+      const user = JSON.parse(userData)
+      userRole = user.rol_usuario
+      console.log('👤 Usuario detectado:', user.nom_usuario, 'Rol:', userRole)
+    } catch (error) {
+      console.error('❌ Error parseando user data:', error)
+    }
   }
+
+  // Si la ruta requiere autenticación y no está autenticado
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    console.log('🚫 No autenticado - Redirigiendo a login')
+    next('/login')
+    return
+  }
+
+  // Si la ruta requiere un rol específico y no lo tiene
+  if (to.meta.requiresAuth && to.meta.role && to.meta.role !== userRole) {
+    console.log('🚫 Rol insuficiente - Redirigiendo a home')
+    next('/home')
+    return
+  }
+
+  // Si ya está autenticado y va al login, redirigir a home
+  if (to.path === '/login' && isAuthenticated) {
+    console.log('✅ Ya autenticado - Redirigiendo a home')
+    next('/home')
+    return
+  }
+
+  console.log('✅ Acceso permitido a:', to.path)
+  next()
 })
 
 export default router

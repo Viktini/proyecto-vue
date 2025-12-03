@@ -238,7 +238,7 @@
 
 <script>
 import { ref, onMounted, computed, watch } from 'vue'
-import { useAppStore } from '@/stores/appStore'
+import { useAppStore } from '../stores/appStore'
 import { useI18n } from 'vue-i18n'
 
 export default {
@@ -525,6 +525,7 @@ export default {
         })
 
         return {
+            store,
             activeTab,
             // Variables para citas
             citasEncontradas,

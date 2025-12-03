@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Puerto 5001 para el backend
+// Puerto 5000 para el backend
 const API_BASE_URL = 'http://localhost:5000';
 
 const api = axios.create({

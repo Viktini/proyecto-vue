@@ -72,7 +72,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { useAppStore } from '@/stores/appStore'
+import { useAppStore } from '../stores/appStore'
 import { validators } from '../utils/validators'
 import { useI18n } from 'vue-i18n'
 
@@ -248,6 +248,7 @@ export default {
     })
 
     return {
+      store,
       formData,
       fieldErrors,
       resultado,
