@@ -1,13 +1,14 @@
 // tratamiento.entity.ts
-import { Entity, Column, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, OneToMany } from 'typeorm';
+import { PaqueteTratamiento } from '../../paquetes/entities/paquete-tratamiento.entity';
 
 @Entity('tratamiento') 
 export class Tratamiento {
   @PrimaryColumn({ name: 'cod_trat', type: 'varchar', length: 10 })
-  codigo_tratamiento: string;
+  cod_trat: string;
 
   @Column({ name: 'nom_trat', type: 'varchar', length: 255, nullable: false })
-  nombre_tratamiento: string;
+  nom_trat: string;
 
   @Column({ name: 'categoria', type: 'varchar', length: 100, nullable: false })
   categoria: string;
@@ -26,4 +27,7 @@ export class Tratamiento {
 
   @Column({ name: 'materiales_necesarios', type: 'text', nullable: true })
   materiales_necesarios: string;
+
+  @OneToMany(() => PaqueteTratamiento, (tp) => tp.tratamiento)
+  paquetes: PaqueteTratamiento[];
 }

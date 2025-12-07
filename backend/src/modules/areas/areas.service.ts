@@ -21,7 +21,7 @@ export class AreasService {
       this.logger.log('Usando consulta directa con TypeORM...');
       const areas = await this.areasRepository.find({
         order: {
-          nombre_area: 'ASC'
+          nom_area: 'ASC'
         }
       });
       
@@ -44,7 +44,7 @@ export class AreasService {
       
       // Para funciones que retornan SETOF, usar esta sintaxis
       const areas = await this.areasRepository.query(
-        `SELECT * FROM obtener_areas() AS (nombre_area TEXT, cantidad_personal_fijo INTEGER)`
+        `SELECT * FROM obtener_areas() AS (nom_area TEXT, cantidad_personal_fijo INTEGER)`
       );
       
       this.logger.log(`✅ Se encontraron ${areas.length} áreas con función`);
@@ -56,7 +56,7 @@ export class AreasService {
       // Fallback a consulta directa
       return await this.areasRepository.find({
         order: {
-          nombre_area: 'ASC'
+          nom_area: 'ASC'
         }
       });
     }
@@ -68,14 +68,14 @@ export class AreasService {
 
       if (!areaData.nombre_area || !areaData.cantidad_personal_fijo) {
         throw new HttpException(
-          'Faltan campos requeridos: nombre_area y cantidad_personal_fijo',
+          'Faltan campos requeridos: nom_area y cantidad_personal_fijo',
           HttpStatus.BAD_REQUEST
         );
       }
 
       // OPCIÓN 1: Usar TypeORM save() (RECOMENDADO)
       const nuevaArea = this.areasRepository.create({
-        nombre_area: areaData.nombre_area,
+        nom_area: areaData.nom_area,
         cantidad_personal_fijo: parseInt(areaData.cantidad_personal_fijo)
       });
 
@@ -115,9 +115,9 @@ export class AreasService {
     try {
       this.logger.log('➕ Creando área con función PostgreSQL...');
 
-      if (!areaData.nombre_area || !areaData.cantidad_personal_fijo) {
+      if (!areaData.nom_area || !areaData.cantidad_personal_fijo) {
         throw new HttpException(
-          'Faltan campos requeridos: nombre_area y cantidad_personal_fijo',
+          'Faltan campos requeridos: nom_area y cantidad_personal_fijo',
           HttpStatus.BAD_REQUEST
         );
       }
@@ -125,7 +125,7 @@ export class AreasService {
       // Para funciones que no retornan cursor
       const result = await this.areasRepository.query(
         `SELECT insertar_area($1, $2) as success`,
-        [areaData.nombre_area, parseInt(areaData.cantidad_personal_fijo)]
+        [areaData.nom_area, parseInt(areaData.cantidad_personal_fijo)]
       );
       
       this.logger.log('✅ Área creada exitosamente con función');
@@ -134,7 +134,7 @@ export class AreasService {
         success: true,
         message: 'Área creada exitosamente',
         area: {
-          nombre_area: areaData.nombre_area,
+          nom_area: areaData.nom_area,
           cantidad_personal_fijo: parseInt(areaData.cantidad_personal_fijo)
         }
       };
@@ -154,7 +154,7 @@ export class AreasService {
 
       // Usar TypeORM update
       const result = await this.areasRepository.update(
-        { nombre_area: nombreArea },
+        { nom_area: nombreArea },
         { cantidad_personal_fijo: parseInt(areaData.cantidad_personal_fijo) }
       );
       
@@ -183,7 +183,7 @@ export class AreasService {
 
       // Usar TypeORM delete
       const result = await this.areasRepository.delete({
-        nombre_area: nombreArea
+        nom_area: nombreArea
       });
       
       if (result.affected === 0) {

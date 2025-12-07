@@ -5,8 +5,8 @@ export const useAppStore = defineStore('app', () => {
   // Estado de autenticación
   const auth = ref({
     isAuthenticated: false,
-    user: null,
-    token: null
+    user: null
+    // ❌ NO hay "token" porque está en cookie HTTP-only
   })
 
   // Datos de la aplicación
@@ -30,7 +30,7 @@ export const useAppStore = defineStore('app', () => {
   const isAdmin = computed(() => auth.value.user?.rol_usuario === 'admin')
   const userRole = computed(() => auth.value.user?.rol_usuario)
 
-  // ✅ GETTERS DE COMPATIBILIDAD
+  // GETTERS DE COMPATIBILIDAD
   const user = computed(() => auth.value.user)
   const isAuthenticated = computed(() => auth.value.isAuthenticated)
 
@@ -47,38 +47,46 @@ export const useAppStore = defineStore('app', () => {
     return paquetesComprados.value.filter(p => p.carnet === carnet)
   }
 
-  // ✅ FUNCIÓN DE SINCRONIZACIÓN CON LOCALSTORAGE
   const syncStoreWithLocalStorage = () => {
     const savedUser = localStorage.getItem('user')
-    const savedToken = localStorage.getItem('token')
 
     if (savedUser) {
       try {
-        auth.value.user = JSON.parse(savedUser)
-        auth.value.isAuthenticated = true
-        auth.value.token = savedToken || null
-        console.log('🔄 Store sincronizado con localStorage')
+        if (savedUser === 'undefined' || savedUser === 'null') {
+          console.log('⚠️ Datos inválidos en localStorage, limpiando...')
+          localStorage.removeItem('user')
+          return
+        }
+
+        const user = JSON.parse(savedUser)
+
+        // ✅ SOLO cargar el usuario, NO establecer isAuthenticated como true
+        if (user && typeof user === 'object' && user.nom_usuario) {
+          auth.value.user = user
+          console.log('🔄 Store sincronizado con localStorage (solo usuario)')
+        } else {
+          console.log('⚠️ Datos de usuario inválidos, limpiando...')
+          localStorage.removeItem('user')
+        }
       } catch (error) {
         console.error('❌ Error sincronizando store:', error)
+        localStorage.removeItem('user')
       }
     }
   }
 
-  // LOGIN
-  // En appStore.js - función login
+  // ✅ LOGIN - Con cookies (el token viene en cookie HTTP-only)
   const login = async (userData) => {
     try {
       loading.value = true
       console.log('📤 Enviando login:', userData)
 
-      // ✅ Cambia a la nueva ruta /auth/login
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ✅ IMPORTANTE: Para enviar/recibir cookies
         body: JSON.stringify({
-          username: userData.username,  // ← nombre de campo actualizado
+          username: userData.username,
           password: userData.password
         })
       })
@@ -91,14 +99,14 @@ export const useAppStore = defineStore('app', () => {
       const result = await response.json()
       console.log('✅ Login exitoso:', result)
 
-      // ✅ La nueva estructura devuelve access_token y usuario
+      // ✅ El token NO está en result, está en cookie HTTP-only
+      // Solo guardamos los datos del usuario
       auth.value.user = result.usuario
       auth.value.isAuthenticated = true
-      auth.value.token = result.access_token  // ← Token real del JWT
 
+      // Guardar usuario en localStorage (solo para UI)
       localStorage.setItem('user', JSON.stringify(result.usuario))
-      localStorage.setItem('token', result.access_token)  // ← Token JWT real
-      localStorage.setItem('auth', JSON.stringify(auth.value))
+      // ❌ NO guardar token - está en cookie HTTP-only
 
       return result
 
@@ -110,23 +118,26 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // REGISTRO
+  // ✅ REGISTRO - Con cookies
   const register = async (userData) => {
     try {
       loading.value = true
-      console.log('📤 Enviando registro con carnet:', userData)
+      console.log('📤 Enviando registro:', userData)
 
-      const response = await fetch('http://localhost:5000/api/usuarios/register', {
+      const backendData = {
+        id_usuario: userData.carnet,
+        nom_usuario: userData.username,
+        contrasenna_usuario: userData.password,
+        rol_usuario: userData.rol_usuario || 'cliente'
+      }
+
+      console.log('📤 Datos para backend:', backendData)
+
+      const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id_usuario: userData.id_usuario,
-          nom_usuario: userData.username,
-          contrasenna_usuario: userData.password,
-          rol_usuario: 'cliente'
-        })
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ✅ Para cookies
+        body: JSON.stringify(backendData)
       })
 
       console.log('📥 Respuesta del servidor status:', response.status)
@@ -138,6 +149,12 @@ export const useAppStore = defineStore('app', () => {
 
       const result = await response.json()
       console.log('✅ Registro exitoso:', result)
+
+      // ✅ Auto-login después del registro (cookie ya está establecida)
+      auth.value.user = result.usuario
+      auth.value.isAuthenticated = true
+      localStorage.setItem('user', JSON.stringify(result.usuario))
+
       return result
 
     } catch (error) {
@@ -148,71 +165,57 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // LOGOUT
-  const logout = () => {
-    auth.value = {
-      isAuthenticated: false,
-      user: null,
-      token: null
-    }
-    localStorage.removeItem('auth')
-    localStorage.removeItem('user')
-    localStorage.removeItem('token')
-    console.log('🚪 Usuario cerró sesión')
-  }
-
-  // VERIFICAR TOKEN
-  const verifyToken = async () => {
-    const token = auth.value.token
-    if (!token) return false
-
+  const logout = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/usuarios/verify', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      // Llamar al endpoint de logout
+      await fetch('http://localhost:5000/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+    } catch (error) {
+      console.error('Error en logout backend:', error)
+    } finally {
+      // Limpiar TODO el estado
+      auth.value = {
+        isAuthenticated: false,
+        user: null
+      }
+      localStorage.removeItem('user')
+      // También limpiar sessionStorage por si acaso
+      sessionStorage.clear()
+      console.log('🚪 Usuario cerró sesión - Estado limpiado completamente')
+    }
+  }
+  const checkSession = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/me', {
+        credentials: 'include'
       })
 
       if (response.ok) {
         const data = await response.json()
         auth.value.user = data.user
+        auth.value.isAuthenticated = true
+        localStorage.setItem('user', JSON.stringify(data.user))
         return true
       } else {
-        logout()
+        // Limpiar todo si falla la verificación
+        auth.value.isAuthenticated = false
+        auth.value.user = null
+        localStorage.removeItem('user')
         return false
       }
     } catch (error) {
-      console.error('Error verificando token:', error)
-      logout()
+      console.warn('⚠️ No se pudo verificar autenticación:', error)
+      // Limpiar en caso de error
+      auth.value.isAuthenticated = false
+      auth.value.user = null
+      localStorage.removeItem('user')
       return false
     }
   }
 
-  // INICIALIZAR AUTENTICACIÓN
-  const initializeAuth = () => {
-    const authData = localStorage.getItem('auth')
-    if (authData) {
-      const parsedAuth = JSON.parse(authData)
-      auth.value = parsedAuth
-
-      // Verificar si el token sigue siendo válido
-      if (parsedAuth.token) {
-        verifyToken()
-      }
-    } else {
-      // También verificar los items individuales por compatibilidad
-      const savedUser = localStorage.getItem('user')
-      const savedToken = localStorage.getItem('token')
-      if (savedUser && savedToken) {
-        auth.value.user = JSON.parse(savedUser)
-        auth.value.token = savedToken
-        auth.value.isAuthenticated = true
-        localStorage.setItem('auth', JSON.stringify(auth.value))
-      }
-    }
-  }
-
-  // ✅ FETCH SIMPLIFICADO - SIN AUTENTICACIÓN POR AHORA
+  // ✅ FETCH CON COOKIES AUTOMÁTICAS
   const simpleFetch = async (url, options = {}) => {
     try {
       console.log('🌐 Fetch a:', url)
@@ -221,14 +224,21 @@ export const useAppStore = defineStore('app', () => {
           'Content-Type': 'application/json',
           ...options.headers
         },
+        credentials: 'include', // ✅ Envía cookies automáticamente
         ...options
       })
 
       if (!response.ok) {
+        // Si es 401, podríamos hacer logout automático
+        if (response.status === 401) {
+          console.warn('⚠️ Token expirado o inválido')
+          auth.value.isAuthenticated = false
+          auth.value.user = null
+          localStorage.removeItem('user')
+        }
         throw new Error(`Error HTTP: ${response.status}`)
       }
 
-      // Verificar si la respuesta es JSON
       const contentType = response.headers.get('content-type')
       if (contentType && contentType.includes('application/json')) {
         return await response.json()
@@ -243,17 +253,29 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // CARGAR TRATAMIENTOS - VERSIÓN SIMPLIFICADA
+  // ✅ FUNCIÓN PARA DEBUG (opcional)
+  const debugCookies = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/debug-cookies', {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        return await response.json()
+      }
+    } catch (error) {
+      console.error('Error debug cookies:', error)
+    }
+  }
+
+  // Resto de funciones (sin cambios)
   const cargarTratamientos = async () => {
     try {
       console.log('📥 Cargando tratamientos...')
-      // ✅ USAR RUTA CORRECTA SIN AUTENTICACIÓN POR AHORA
       const data = await simpleFetch('http://localhost:5000/api/tratamientos')
       tratamientos.value = data
       console.log('✅ Tratamientos cargados:', data.length)
     } catch (error) {
       console.error('❌ Error cargando tratamientos:', error)
-      // ✅ CARGAR DATOS DE PRUEBA SI FALLA
       tratamientos.value = [
         { id: 1, nombre: 'Masaje Relajante', precio: 50, duracion: 60 },
         { id: 2, nombre: 'Facial de Lujo', precio: 80, duracion: 90 }
@@ -262,7 +284,6 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // CARGAR AREAS - VERSIÓN SIMPLIFICADA
   const cargarAreas = async () => {
     try {
       console.log('📥 Cargando áreas...')
@@ -271,7 +292,6 @@ export const useAppStore = defineStore('app', () => {
       console.log('✅ Áreas cargadas:', data.length)
     } catch (error) {
       console.error('❌ Error cargando áreas:', error)
-      // ✅ CARGAR DATOS DE PRUEBA SI FALLA
       areas.value = [
         { id: 1, nombre: 'Spa Principal', descripcion: 'Área principal de tratamientos' },
         { id: 2, nombre: 'Zona de Masajes', descripcion: 'Especializada en masajes' }
@@ -280,7 +300,6 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // CARGAR PAQUETES - VERSIÓN SIMPLIFICADA
   const cargarPaquetes = async () => {
     try {
       console.log('📥 Cargando paquetes...')
@@ -289,7 +308,6 @@ export const useAppStore = defineStore('app', () => {
       console.log('✅ Paquetes cargados:', data.length)
     } catch (error) {
       console.error('❌ Error cargando paquetes:', error)
-      // ✅ CARGAR DATOS DE PRUEBA SI FALLA
       paquetes.value = [
         { id: 1, nombre: 'Paquete Relax', precio: 120, tratamientos: ['Masaje', 'Facial'] },
         { id: 2, nombre: 'Paquete Premium', precio: 200, tratamientos: ['Masaje', 'Facial', 'Manicura'] }
@@ -298,7 +316,6 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // RESERVAR CITA
   const reservarCita = async (citaData) => {
     try {
       const response = await simpleFetch('http://localhost:5000/api/citas', {
@@ -317,7 +334,6 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // COMPRAR PAQUETE
   const comprarPaquete = async (paqueteData) => {
     try {
       const response = await simpleFetch('http://localhost:5000/api/paquetes/comprar', {
@@ -336,7 +352,6 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // CANCELAR CITA
   const cancelarCita = async (citaId) => {
     try {
       const response = await simpleFetch(`http://localhost:5000/api/citas/${citaId}`, {
@@ -352,7 +367,6 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // CANCELAR PAQUETE
   const cancelarPaquete = async (paqueteId) => {
     try {
       const response = await simpleFetch(`http://localhost:5000/api/paquetes/${paqueteId}`, {
@@ -368,7 +382,6 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // ACTUALIZAR DATOS USUARIO
   const actualizarDatosUsuario = async (datosUsuario) => {
     try {
       const response = await simpleFetch(`http://localhost:5000/api/usuarios/${auth.value.user.nom_usuario}`, {
@@ -380,7 +393,6 @@ export const useAppStore = defineStore('app', () => {
         const usuarioActualizado = response
         auth.value.user = { ...auth.value.user, ...usuarioActualizado }
         localStorage.setItem('user', JSON.stringify(auth.value.user))
-        localStorage.setItem('auth', JSON.stringify(auth.value))
         return usuarioActualizado
       }
     } catch (error) {
@@ -389,21 +401,14 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // UTILIDADES
   const limpiarSeleccionPaquete = () => {
     paqueteSeleccionado.value = null
     tipoPaqueteSeleccionado.value = null
   }
 
-  // INICIALIZACIÓN
-  const inicializarDesdeLocalStorage = () => {
-    syncStoreWithLocalStorage() // ✅ SINCRONIZAR AL INICIAR
-  }
-
-  // ✅ INICIALIZAR AUTOMÁTICAMENTE AL CREAR EL STORE
+  // ✅ INICIALIZAR DESDE LOCALSTORAGE
   syncStoreWithLocalStorage()
 
-  // RETURN FINAL
   return {
     // State
     auth,
@@ -422,17 +427,16 @@ export const useAppStore = defineStore('app', () => {
     isCliente,
     isAdmin,
     userRole,
-    user, // ✅ AGREGADO
-    isAuthenticated, // ✅ AGREGADO
+    user,
+    isAuthenticated,
 
     // Actions
     login,
     register,
     logout,
-    verifyToken,
-    initializeAuth,
-    authenticatedFetch: simpleFetch, // ✅ ALIAS PARA COMPATIBILIDAD
-    simpleFetch, // ✅ NUEVO MÉTODO SIMPLIFICADO
+    checkSession,
+    debugCookies,
+    simpleFetch,
     cargarTratamientos,
     cargarAreas,
     cargarPaquetes,
@@ -445,7 +449,6 @@ export const useAppStore = defineStore('app', () => {
     citasPorCarnet,
     paquetesPorCarnet,
     limpiarSeleccionPaquete,
-    inicializarDesdeLocalStorage,
-    syncStoreWithLocalStorage // ✅ EXPORTAR PARA USO EXTERNO
+    syncStoreWithLocalStorage
   }
 })

@@ -1,311 +1,100 @@
-// src/modules/auth/auth.service.ts
-import {
-  Injectable,
-  UnauthorizedException,
-  ConflictException,
-  NotFoundException,
-  BadRequestException,
-  Logger
-} from '@nestjs/common';
+// src/auth/auth.service.ts
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcrypt';
-import { UsersService } from '../users/users.service';
-import { User } from '../users/entities/user.entity';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Usuario } from '../users/entities/usuario.entity';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
-
   constructor(
-    private usersService: UsersService,
+    @InjectRepository(Usuario)
+    private usuariosRepository: Repository<Usuario>,
     private jwtService: JwtService,
-    private configService: ConfigService,
   ) { }
 
-  // ========== REGISTRO ==========
-
-  async register(registerDto: RegisterDto): Promise<any> {
-    // Verificar si el gmail ya existe
-    const existingUserByEmail = await this.usersService.findByEmail(registerDto.gmail);
-    if (existingUserByEmail) {
-      throw new ConflictException('El gmail ya está registrado');
-    }
-
-    // Verificar si el username ya existe
-    const existingUserByUsername = await this.usersService.findByUsername(registerDto.username);
-    if (existingUserByUsername) {
-      throw new ConflictException('El nombre de usuario ya está registrado');
-    }
-
-    // Verificar que las contraseñas coincidan
-    if (registerDto.password !== registerDto.confirmPassword) {
-      throw new BadRequestException('Las contraseñas no coinciden');
-    }
-
-    // Crear usuario
-    const user = await this.usersService.create({
-      fullName: registerDto.fullName,
-      gmail: registerDto.gmail,
-      username: registerDto.username,
-      password: registerDto.password,
-      role: 'cliente', // Por defecto, todos son clientes
+  // auth.service.ts - método validateUser
+  async validateUser(username: string, password: string): Promise<any> {
+    const user = await this.usuariosRepository.findOne({
+      where: { nom_usuario: username },
+      select: ['id_usuario', 'nom_usuario', 'contrasenna_usuario', 'rol_usuario'] // ✅ Seleccionar campos
     });
 
-    // Generar tokens
-    const tokens = await this.generateTokens(user);
+    console.log('🔍 validateUser - usuario encontrado en DB:', user);
 
-    this.logger.log(`Nuevo usuario registrado: ${user.gmail}`);
+    if (user && await bcrypt.compare(password, user.contrasenna_usuario)) {
+      const { contrasenna_usuario, ...result } = user;
+      console.log('🔍 validateUser - usuario a retornar:', result);
+      return result;
+    }
 
-    return {
-      success: true,
-      message: 'Usuario registrado exitosamente',
-      data: {
-        user: {
-          id: user.id,
-          fullName: user.fullName,
-          gmail: user.gmail,
-          username: user.username,
-          role: user.role,
-          createdAt: user.createdAt,
-        }
-      }
+    return null;
+  }
+
+  // auth.service.ts - método login
+  async login(user: any) {
+    const payload = {
+      username: user.nom_usuario,
+      sub: user.id_usuario,
+      role: user.rol_usuario,
     };
-  }
 
-  // ========== VALIDACIÓN ==========
-
-  async validateUser(usernameOrEmail: string, password: string): Promise<any> {
-    // Buscar por username o email
-    let user = await this.usersService.findByUsername(usernameOrEmail);
-    
-    if (!user) {
-      // Si no encuentra por username, buscar por email
-      user = await this.usersService.findByEmail(usernameOrEmail);
-    }
-    
-    if (!user) {
-      return null;
-    }
-    
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    
-    if (!isPasswordValid) {
-      this.logger.warn(`Intento fallido de login para: ${usernameOrEmail}`);
-      return null;
-    }
-    
-    // Retornar usuario sin datos sensibles
-    const { password: _, refreshToken: __, ...safeUser } = user;
-    return safeUser;
-  }
-
-  // ========== LOGIN ==========
-
-  async login(user: any): Promise<any> {
-    // Obtener usuario completo
-    const fullUser = await this.usersService.findById(user.id);
-    
-    if (!fullUser) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
-
-    // Generar tokens
-    const tokens = await this.generateTokens(fullUser);
-
-    // Actualizar refresh token
-    await this.usersService.updateRefreshToken(fullUser.id, tokens.refresh_token);
-
-    this.logger.log(`Usuario logueado: ${fullUser.gmail}`);
+    console.log('🔍 AuthService - usuario recibido:', user);
+    console.log('🔍 Propiedades del usuario:', {
+      id_usuario: user.id_usuario,
+      nom_usuario: user.nom_usuario,
+      rol_usuario: user.rol_usuario
+    });
 
     return {
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expires_in: this.configService.get('JWT_EXPIRES_IN', '1h'),
-      user: {
-        id: fullUser.id,
-        fullName: fullUser.fullName,  // Cambiado de name a fullName
-        gmail: fullUser.gmail,        // Cambiado de email a gmail
-        username: fullUser.username,  // Añadido username
-        role: fullUser.role,
-        createdAt: fullUser.createdAt,
+      access_token: this.jwtService.sign(payload),
+      usuario: {
+        id_usuario: user.id_usuario, // ✅ Asegurar que existan
+        nom_usuario: user.nom_usuario,
+        rol_usuario: user.rol_usuario,
       },
     };
   }
 
-  // ========== REFRESH TOKEN ==========
-
-  async refreshToken(refreshToken: string): Promise<any> {
-    try {
-      // Verificar token
-      const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
-      });
-
-      // Buscar usuario
-      const user = await this.usersService.findById(payload.sub);
-      
-      if (!user) {
-        throw new UnauthorizedException('Usuario no encontrado');
-      }
-
-      // Verificar que coincida el token
-      if (!user.refreshToken || user.refreshToken !== refreshToken) {
-        throw new UnauthorizedException('Refresh token inválido');
-      }
-
-      // Generar nuevos tokens
-      const tokens = await this.generateTokens(user);
-
-      // Actualizar en BD
-      await this.usersService.updateRefreshToken(user.id, tokens.refresh_token);
-
-      this.logger.log(`Tokens refrescados para: ${user.gmail}`);  // Cambiado de email a gmail
-
-      return {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_in: this.configService.get('JWT_EXPIRES_IN', '1h'),
-        user: {
-          id: user.id,
-          fullName: user.fullName,    // Cambiado de name a fullName
-          gmail: user.gmail,          // Cambiado de email a gmail
-          username: user.username,    // Añadido username
-          role: user.role,
-          createdAt: user.createdAt,
-        },
-      };
-    } catch (error) {
-      if (error.name === 'TokenExpiredError') {
-        throw new UnauthorizedException('Refresh token expirado');
-      }
-      throw new UnauthorizedException('Refresh token inválido');
-    }
-  }
-
-  // ========== LOGOUT ==========
-
-  async logout(userId: string): Promise<{ message: string }> {
-    await this.usersService.updateRefreshToken(userId, null);
-    this.logger.log(`Usuario deslogueado: ${userId}`);
-    return { message: 'Sesión cerrada exitosamente' };
-  }
-
-  // ========== CAMBIO DE CONTRASEÑA ==========
-
-  async changePassword(
-    userId: string, 
-    currentPassword: string, 
-    newPassword: string
-  ): Promise<{ message: string }> {
-    const user = await this.usersService.findById(userId);
-    
-    if (!user) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
-
-    // Verificar contraseña actual
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
-    
-    if (!isCurrentPasswordValid) {
-      throw new UnauthorizedException('La contraseña actual es incorrecta');
-    }
-
-    // Verificar que sea diferente
-    const isSamePassword = await bcrypt.compare(newPassword, user.password);
-    
-    if (isSamePassword) {
-      throw new BadRequestException('La nueva contraseña debe ser diferente');
-    }
-
-    // Actualizar contraseña
-    user.password = newPassword;
-    await this.usersService.save(user);
-
-    // Invalidar tokens
-    await this.usersService.updateRefreshToken(userId, null);
-
-    this.logger.log(`Contraseña cambiada para: ${user.gmail}`);  // Cambiado de email a gmail
-
-    return { message: 'Contraseña cambiada exitosamente' };
-  }
-
-  // ========== MÉTODOS PRIVADOS ==========
-
-  private async generateTokens(user: User): Promise<{
-    access_token: string;
-    refresh_token: string;
-  }> {
-    const accessPayload = {
-      sub: user.id,
-      username: user.username,
-      gmail: user.gmail,      // Cambiado de email a gmail
-      fullName: user.fullName, // Cambiado de name a fullName
-      role: user.role,
-    };
-
-    const refreshPayload = {
-      sub: user.id,
-    };
-
-    const accessToken = this.jwtService.sign(accessPayload, {
-      expiresIn: this.configService.get('JWT_EXPIRES_IN', '1h'),
-      secret: this.configService.get('JWT_SECRET'),
+  // src/auth/auth.service.ts
+  async register(userData: {
+    id_usuario: string; // Carnet como ID
+    nom_usuario: string;
+    contrasenna_usuario: string;
+    rol_usuario?: string;
+  }) {
+    // Verificar si el usuario ya existe
+    const existingUser = await this.usuariosRepository.findOne({
+      where: [
+        { nom_usuario: userData.nom_usuario },
+        { id_usuario: userData.id_usuario }
+      ],
     });
 
-    const refreshToken = this.jwtService.sign(refreshPayload, {
-      expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
-      secret: this.configService.get('JWT_REFRESH_SECRET'),
+    if (existingUser) {
+      if (existingUser.id_usuario === userData.id_usuario) {
+        throw new UnauthorizedException('El carnet ya está registrado');
+      }
+      if (existingUser.nom_usuario === userData.nom_usuario) {
+        throw new UnauthorizedException('El nombre de usuario ya existe');
+      }
+    }
+
+    // Encriptar contraseña
+    const hashedPassword = await bcrypt.hash(userData.contrasenna_usuario, 10);
+
+    // Crear nuevo usuario
+    const newUser = this.usuariosRepository.create({
+      id_usuario: userData.id_usuario,
+      nom_usuario: userData.nom_usuario,
+      contrasenna_usuario: hashedPassword,
+      rol_usuario: userData.rol_usuario || 'cliente',
     });
 
-    return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    };
+    await this.usuariosRepository.save(newUser);
+
+    // Generar token automáticamente
+    return this.login(newUser);
   }
-
-  // ========== MÉTODOS ÚTILES ==========
-
-  async verifyToken(accessToken: string): Promise<any> {
-    try {
-      const payload = this.jwtService.verify(accessToken, {
-        secret: this.configService.get('JWT_SECRET'),
-      });
-
-      const user = await this.usersService.findById(payload.sub);
-      
-      if (!user) {
-        return { valid: false, reason: 'Usuario no encontrado' };
-      }
-
-      return {
-        valid: true,
-        user: {
-          id: user.id,
-          gmail: user.gmail,      // Cambiado de email a gmail
-          username: user.username, // Añadido username
-          fullName: user.fullName, // Cambiado de name a fullName
-          role: user.role,
-        },
-      };
-    } catch (error) {
-      return { valid: false, reason: error.message };
-    }
-  }
-
-  async getUserById(userId: string): Promise<any> {
-    const user = await this.usersService.findById(userId);
-    
-    if (!user) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
-    
-    const { password, refreshToken, ...safeUser } = user;
-    return safeUser;
-  }
-  
-  // NOTA: Los métodos findByUsername, findByEmail y create NO pertenecen aquí
-  // Deben estar SOLO en UsersService
 }

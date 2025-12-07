@@ -1,9 +1,14 @@
 import { IsString, IsNumber, IsOptional, IsNotEmpty, Min, Max } from 'class-validator';
 
 export class CreateTratamientoDto {
+  
   @IsString()
   @IsNotEmpty()
-  nombre_tratamiento: string;
+  cod_trat: string
+  
+  @IsString()
+  @IsNotEmpty()
+  nom_trat: string;
 
   @IsString()
   @IsNotEmpty()

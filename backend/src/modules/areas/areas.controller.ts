@@ -1,12 +1,12 @@
 // src/areas/areas.controller.ts - CON GUARDS
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { AreasService } from './areas.service';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';  // ← 2 niveles arriba
+import { JwtAuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 
 @Controller('areas')
-@UseGuards(JwtAuthGuard, RolesGuard) // ← Múltiples guards
+@UseGuards(JwtAuthGuard, RolesGuard) //POR ESTO LAS AREAS NO SE MUESTRAN NI LAS CATEGORIAS Q TIENEN MUCHO Q VER
 export class AreasController {
   constructor(private readonly areasService: AreasService) {}
 

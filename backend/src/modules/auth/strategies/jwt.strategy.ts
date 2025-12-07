@@ -1,37 +1,47 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+// src/auth/strategies/jwt.strategy.ts
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from '../../users/users.service';
+import { Request } from 'express';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(
-    private configService: ConfigService,
-    private usersService: UsersService,
-  ) {
+  constructor(private configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      // Extraer token de cookie o header Authorization
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (request: Request) => {
+          // 1. Intentar obtener de cookie
+          if (request?.cookies?.access_token) {
+            return request.cookies.access_token;
+          }
+          
+          // 2. Intentar obtener de header Authorization (para compatibilidad)
+          const authHeader = request.headers.authorization;
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+            return authHeader.substring(7);
+          }
+          
+          // 3. Intentar obtener de query string (opcional, para desarrollo)
+          if (request?.query?.token) {
+            return request.query.token as string;
+          }
+          
+          return null;
+        },
+      ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'default_secret_key_here',
+      secretOrKey: configService.get<string>('JWT_SECRET'),
     });
   }
 
   async validate(payload: any) {
-    const user = await this.usersService.findById(payload.sub);
-    
-    if (!user) {
-      throw new UnauthorizedException('Usuario no encontrado');
-    }
-
-    // IMPORTANTE: Usa los nombres correctos de tu entidad User
+    // Este payload es lo que enviaste cuando creaste el token
     return {
-      id: user.id,
-      gmail: user.gmail,        // Cambiado de email a gmail
-      username: user.username,  // Añadido username
-      fullName: user.fullName,  // Añadido fullName
-      role: user.role,
-      createdAt: user.createdAt,
+      id_usuario: payload.sub,
+      nom_usuario: payload.username,
+      rol_usuario: payload.role,
     };
   }
 }

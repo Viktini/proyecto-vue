@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAppStore } from '@/stores/appStore'
 
 // Componentes
 import Login from '../components/Login.vue'
@@ -20,7 +21,7 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login,
-    meta: { requiresAuth: false, hideNavbar: true }
+    meta: { guestOnly: true }
   },
   {
     path: '/home',
@@ -44,35 +45,31 @@ const routes = [
     path: '/reservar-cita',
     name: 'ReservarCita',
     component: ReservarCita,
-    meta: { requiresAuth: true, role: 'cliente' }
+    meta: { requiresAuth: true, requiresRole: 'cliente' }
   },
   {
     path: '/comprar-paquete',
     name: 'ComprarPaquete',
     component: ComprarPaquete,
-    meta: { requiresAuth: true, role: 'cliente' }
+    meta: { requiresAuth: true, requiresRole: 'cliente' }
   },
   {
     path: '/mis-reservas',
     name: 'MisReservas',
     component: MisReservas,
-    meta: { requiresAuth: true, role: 'cliente' }
+    meta: { requiresAuth: true, requiresRole: 'cliente' }
   },
   {
     path: '/admin',
     name: 'AdminDashboard',
     component: AdminDashboard,
-    meta: { requiresAuth: true, role: 'admin' }
+    meta: { requiresAuth: true, requiresRole: 'admin' }
   },
   {
     path: '/datos-usuario',
     name: 'DatosUsuario',
     component: DatosUsuario,
-    meta: { requiresAuth: true, role: 'cliente' }
-  },
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/home'
+    meta: { requiresAuth: true, requiresRole: 'cliente' }
   }
 ]
 
@@ -81,50 +78,109 @@ const router = createRouter({
   routes
 })
 
-// ✅ GUARD MEJORADO CON VERIFICACIÓN DE ROLES
-router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
-  const userData = localStorage.getItem('user')
-  let user = null
-  
-  try {
-    user = userData ? JSON.parse(userData) : null
-  } catch (error) {
-    console.error('Error parsing user data:', error)
-    localStorage.removeItem('user')
-    localStorage.removeItem('token')
-  }
+router.beforeEach(async (to, from, next) => {
+  console.log('🛡️ Router guard - Verificando ruta:', to.path)
 
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-  const requiredRole = to.meta.role
+  const appStore = useAppStore()
 
-  // Si la ruta requiere autenticación y no hay token
-  if (requiresAuth && !token) {
-    next('/login')
-    return
-  }
+  // Rutas que son públicas (siempre accesibles)
+  const publicPaths = ['/login', '/']
 
-  // Si ya está autenticado y va a login, redirigir a home
-  if (to.path === '/login' && token) {
-    next('/home')
-    return
-  }
-
-  // Si la ruta requiere un rol específico
-  if (requiresAuth && requiredRole) {
-    if (!user || user.rol_usuario !== requiredRole) {
-      // Si no tiene el rol requerido, redirigir según su rol
-      if (user && user.rol_usuario === 'admin') {
+  if (publicPaths.includes(to.path)) {
+    // Si ya está autenticado y trata de ir a login, redirigir
+    if (appStore.isAuthenticated) {
+      if (appStore.isAdmin) {
         next('/admin')
       } else {
         next('/home')
       }
       return
     }
+    next()
+    return
   }
 
-  // Si todo está bien, continuar
+  // Para rutas protegidas, verificar autenticación
+  if (to.meta.requiresAuth) {
+    // Primero intentar sincronizar con localStorage
+    appStore.syncStoreWithLocalStorage()
+
+    // Si no está autenticado, verificar sesión con backend
+    if (!appStore.isAuthenticated) {
+      try {
+        const sessionValid = await appStore.checkSession()
+        if (!sessionValid) {
+          console.log('❌ Sesión inválida - Redirigiendo a login')
+          next('/login')
+          return
+        }
+      } catch (error) {
+        console.error('❌ Error verificando sesión:', error)
+        next('/login')
+        return
+      }
+    }
+
+    // Si aún no está autenticado después de checkSession, redirigir a login
+    if (!appStore.isAuthenticated) {
+      console.log('🚫 No autenticado después de checkSession - Redirigiendo a login')
+      next('/login')
+      return
+    }
+
+    // Verificar rol si es requerido
+    if (to.meta.requiresRole) {
+      const userRole = appStore.user?.rol_usuario
+
+      if (!userRole) {
+        console.log('🚫 Sin rol definido - Redirigiendo a home')
+        next('/home')
+        return
+      }
+
+      if (to.meta.requiresRole === 'admin' && !appStore.isAdmin) {
+        console.log('🚫 Acceso denegado - Se requiere rol admin')
+        next('/home')
+        return
+      }
+
+      if (to.meta.requiresRole === 'cliente' && !appStore.isCliente) {
+        console.log('🚫 Acceso denegado - Se requiere rol cliente')
+        next('/home')
+        return
+      }
+    }
+
+    console.log('✅ Acceso permitido a:', to.path)
+    next()
+    return
+  }
+
+  // Para cualquier otra ruta no definida (caerá en el catch-all de abajo si existe)
+  console.log('✅ Ruta sin restricciones - Acceso permitido')
   next()
+})
+
+// Manejar error de navegación
+router.onError((error) => {
+  console.error('❌ Error de navegación:', error)
+})
+
+// Añadir catch-all route para redirigir rutas no encontradas
+router.beforeResolve((to, from, next) => {
+  if (!to.matched.length) {
+    console.log('📍 Ruta no encontrada:', to.path)
+
+    // Verificar si está autenticado para redirigir apropiadamente
+    const appStore = useAppStore()
+    if (appStore.isAuthenticated) {
+      next('/home')
+    } else {
+      next('/login')
+    }
+  } else {
+    next()
+  }
 })
 
 export default router

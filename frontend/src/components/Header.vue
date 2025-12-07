@@ -1,5 +1,6 @@
+<!-- Header.vue - VERSIÓN CORREGIDA -->
 <template>
-  <header class="header">
+  <header class="header" v-if="showHeader">
     <div class="container">
       <div class="header-content">
         <!-- Logo y título a la izquierda -->
@@ -17,8 +18,6 @@
             <li v-if="isCliente">
               <router-link to="/mis-reservas">{{ $t('header.MyReservations') }}</router-link>
             </li>
-
-            <!-- Eliminamos el enlace de usuario del menú principal -->
             <li v-if="isAdmin">
               <router-link to="/admin">{{ $t('header.adminPanel') }}</router-link>
             </li>
@@ -62,49 +61,57 @@
   </header>
 </template>
 
-<script>
-import { computed, ref, onMounted } from 'vue'
+<script setup>
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/appStore'
 import { useI18nComposable } from '@/composables/useI18n'
 
-export default {
-  name: 'Header',
-  setup() {
-    const store = useAppStore()
-    const router = useRouter()
-    const { changeLanguage, currentLanguage } = useI18nComposable()
+const store = useAppStore()
+const router = useRouter()
+const { changeLanguage, currentLanguage } = useI18nComposable()
 
-    const currentLang = ref(currentLanguage())
+const currentLang = ref(currentLanguage())
 
-    const isAdmin = computed(() => store.isAdmin)
-    const isCliente = computed(() => store.isCliente)
+// ✅ MODIFICADO: Mostrar header si está autenticado O si hay un usuario en localStorage
+// ✅ Mostrar header solo si está autenticado y NO está en login
+const showHeader = computed(() => {
+  const currentPath = router.currentRoute.value.path
+  const isLoginPage = currentPath === '/login' || currentPath === '/'
 
-    const logout = () => {
-      if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-        store.logout()
-        router.push('/login')
-      }
-    }
+  return store.isAuthenticated && !isLoginPage
+})
 
-    const irAUsuario = () => {
-      router.push('/datos-usuario')
-    }
+// ✅ Computed properties reactivas del store
+const isAdmin = computed(() => store.isAdmin)
+const isCliente = computed(() => store.isCliente)
 
-    onMounted(() => {
-      currentLang.value = currentLanguage()
-    })
+// ✅ Watch para debug
+watch(showHeader, (newVal) => {
+  console.log('🔄 showHeader cambió a:', newVal)
+  console.log('👤 Usuario en store:', store.user)
+  console.log('🏷️ Rol:', store.user?.rol_usuario)
+})
 
-    return {
-      isAdmin,
-      isCliente,
-      logout,
-      irAUsuario,
-      changeLanguage,
-      currentLang
-    }
+const logout = async () => {
+  if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+    await store.logout()
+    router.push('/login')
   }
 }
+
+const irAUsuario = () => {
+  router.push('/datos-usuario')
+}
+
+onMounted(() => {
+  currentLang.value = currentLanguage()
+  console.log('✅ Header montado')
+  console.log('📊 Estado inicial:')
+  console.log('- isAuthenticated:', store.isAuthenticated)
+  console.log('- user:', store.user)
+  console.log('- showHeader:', showHeader.value)
+})
 </script>
 
 <style scoped>

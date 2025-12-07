@@ -1,49 +1,63 @@
-// src/app.module.ts - VERSIÓN CORREGIDA
+// app.module.ts - VERSIÓN FINAL
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
-import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
-import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
-import { RolesGuard } from './common/guards/roles.guard';
+import { APP_PIPE } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { TratamientosModule } from './modules/tratamientos/tratamientos.module';
+import { AreasModule } from './modules/areas/areas.module';
+import { PaquetesModule } from './modules/paquetes/paquetes.module';
+import { ValidationPipe } from './common/pipes/validation.pipe';
+import { UsuariosModule } from './modules/users/usuarios.module';
 
 @Module({
   imports: [
-    // 1. Configuración de variables de entorno
+    // 🔧 ConfigModule global (ESTO ES NECESARIO PARA QUE AuthModule FUNCIONE)
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
     }),
 
-    // 2. Base de datos PostgreSQL
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT) || 5432,
-      username: process.env.DB_USERNAME || 'postgres',
-      password: process.env.DB_PASSWORD || 'password',
-      database: process.env.DB_NAME || 'belleza_relajacion',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: false, // true en desarrollo
-      logging: process.env.NODE_ENV === 'development',
+    // 🔐 AuthModule (ahora exporta JwtModule)
+    AuthModule,
+
+    // 📦 Otros módulos
+    TratamientosModule,
+    AreasModule,
+    PaquetesModule,
+    UsuariosModule,
+
+    // 🗄️ TypeORM
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get('DB_HOST', 'localhost'),
+        port: configService.get<number>('DB_PORT', 5432),
+        username: configService.get('DB_USER', 'postgres'),
+        password: configService.get('DB_PASS', 'Inukibunti.0'),
+        database: configService.get('DB_NAME', 'SPA'),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: configService.get('DB_SYNCHRONIZE', 'false') === 'true',
+        logging: configService.get('DB_LOGGING', 'true') === 'true',
+        retryAttempts: 3,
+        retryDelay: 3000,
+      }),
+      inject: [ConfigService],
     }),
 
-    // 3. Módulos de la aplicación
-    AuthModule,
-    UsersModule,
+    // ❌ NO MÁS JwtModule.registerAsync global aquí
+    // Ya está configurado en AuthModule
   ],
+  controllers: [AppController],
   providers: [
-    // IMPORTANTE: Solo un guard global JWT
+    AppService,
     {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      provide: APP_PIPE,
+      useClass: ValidationPipe,
     },
-    // Guard de roles (opcional, si lo usas)
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: RolesGuard,
-    // },
   ],
 })
-export class AppModule {}
+export class AppModule { }

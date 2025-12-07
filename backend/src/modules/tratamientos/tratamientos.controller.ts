@@ -3,9 +3,9 @@ import { Controller, Get, Post, Put, Delete, Body, Param, HttpCode, HttpStatus, 
 import { TratamientosService } from './tratamientos.service';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
 import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../common/guards/auth.guard';
 import { ValidationPipe } from '../../common/pipes/validation.pipe';
-import { Public } from '../../common/decorators/public.decorator';
+import { Public } from '../../common/decorators/public.decorator'; // Añade esto
 
 @Controller('tratamientos')
 export class TratamientosController {
@@ -19,8 +19,8 @@ export class TratamientosController {
 
     // Transformar explícitamente para asegurar formato
     return tratamientos.map(tratamiento => ({
-      codigo_tratamiento: tratamiento.codigo_tratamiento,
-      nombre_tratamiento: tratamiento.nombre_tratamiento,
+      cod_trat: tratamiento.cod_trat,
+      nom_trat: tratamiento.nom_trat,
       categoria: tratamiento.categoria,
       descripcion: tratamiento.descripcion,
       duracion: Number(tratamiento.duracion),

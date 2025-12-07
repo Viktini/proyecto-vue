@@ -19,14 +19,14 @@ export class TratamientosService {
 
   // En tratamientos.service.ts - método getTratamientos
   // tratamientos.service.ts - CORRIGE el método getTratamientos
-async getTratamientos(): Promise<Tratamiento[]> {
+async getTratamientos(): Promise<any[]> {
   try {
     this.logger.log('Obteniendo tratamientos...');
     
     // Usa getRawAndEntities para debug
     const queryBuilder = this.tratamientosRepository
       .createQueryBuilder('tratamiento')
-      .orderBy('tratamiento.codigo_tratamiento', 'ASC');
+      .orderBy('tratamiento.cod_trat', 'ASC');
     
     // Ejecutar y transformar explícitamente
     const tratamientos = await queryBuilder.getMany();
@@ -44,8 +44,8 @@ async getTratamientos(): Promise<Tratamiento[]> {
       
       // Asegurar que los campos están correctamente mapeados
       const tratamientosTransformados = tratamientos.map(tratamiento => ({
-        codigo_tratamiento: tratamiento.codigo_tratamiento,
-        nombre_tratamiento: tratamiento.nombre_tratamiento,
+        cod_trat: tratamiento.cod_trat,
+        nom_trat: tratamiento.nom_trat,
         categoria: tratamiento.categoria,
         descripcion: tratamiento.descripcion,
         duracion: tratamiento.duracion,
@@ -96,19 +96,19 @@ async getTratamientos(): Promise<Tratamiento[]> {
       // Generar código automáticamente
       const lastTreatment = await this.tratamientosRepository
         .createQueryBuilder('tratamiento')
-        .orderBy('tratamiento.codigo_tratamiento', 'DESC')
+        .orderBy('tratamiento.codigo_trat', 'DESC')
         .getOne();
 
       let nextCode = 'T001';
-      if (lastTreatment && lastTreatment.codigo_tratamiento) {
-        const lastNumber = parseInt(lastTreatment.codigo_tratamiento.substring(1)) || 0;
+      if (lastTreatment && lastTreatment.cod_trat) {
+        const lastNumber = parseInt(lastTreatment.cod_trat.substring(1)) || 0;
         nextCode = 'T' + (lastNumber + 1).toString().padStart(3, '0');
       }
 
       // Crear tratamiento con TypeORM
       const nuevoTratamiento = this.tratamientosRepository.create({
-        codigo_tratamiento: nextCode,
-        nombre_tratamiento: createTratamientoDto.nombre_tratamiento,
+        cod_trat: nextCode,
+        nom_trat: createTratamientoDto.nom_trat,
         categoria: createTratamientoDto.categoria,
         descripcion: createTratamientoDto.descripcion,
         duracion: createTratamientoDto.duracion,
@@ -147,7 +147,7 @@ async getTratamientos(): Promise<Tratamiento[]> {
 
       // Verificar si el tratamiento existe
       const tratamientoExistente = await this.tratamientosRepository.findOne({
-        where: { codigo_tratamiento: codigo }
+        where: { cod_trat: codigo }
       });
 
       if (!tratamientoExistente) {
@@ -167,7 +167,7 @@ async getTratamientos(): Promise<Tratamiento[]> {
 
       // Actualizar tratamiento
       await this.tratamientosRepository.update(
-        { codigo_tratamiento: codigo },
+        { cod_trat: codigo },
         {
           ...updateTratamientoDto,
           // Asegurar que los valores numéricos sean correctos
@@ -179,7 +179,7 @@ async getTratamientos(): Promise<Tratamiento[]> {
 
       // Obtener el tratamiento actualizado
       const tratamientoActualizado = await this.tratamientosRepository.findOne({
-        where: { codigo_tratamiento: codigo }
+        where: { cod_trat: codigo }
       });
 
       this.logger.log('✅ Tratamiento actualizado exitosamente');
@@ -210,7 +210,7 @@ async getTratamientos(): Promise<Tratamiento[]> {
 
       // Verificar si el tratamiento existe
       const tratamientoExistente = await this.tratamientosRepository.findOne({
-        where: { codigo_tratamiento: codigo }
+        where: { cod_trat: codigo }
       });
 
       if (!tratamientoExistente) {
@@ -218,7 +218,7 @@ async getTratamientos(): Promise<Tratamiento[]> {
       }
 
       // Eliminar tratamiento
-      await this.tratamientosRepository.delete({ codigo_tratamiento: codigo });
+      await this.tratamientosRepository.delete({ cod_trat: codigo });
 
       this.logger.log('✅ Tratamiento eliminado exitosamente');
 

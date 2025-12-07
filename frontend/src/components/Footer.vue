@@ -1,5 +1,5 @@
 <template>
-  <footer class="footer">
+  <footer class="footer" v-if="showFooter">
     <div class="container">
       <div class="footer-content">
         <div class="footer-section">
@@ -26,11 +26,21 @@
   </footer>
 </template>
 
-<script>
-export default {
-  name: 'Footer',
-  // ✅ NO necesita setup porque solo usa $t en el template
-}
+<script setup>
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAppStore } from '@/stores/appStore'
+
+const store = useAppStore()
+const router = useRouter()
+
+// ✅ Agregar computed para mostrar footer
+const showFooter = computed(() => {
+  const currentPath = router.currentRoute.value.path
+  const isLoginPage = currentPath === '/login' || currentPath === '/'
+
+  return store.isAuthenticated && !isLoginPage
+})
 </script>
 
 <style scoped>

@@ -1,44 +1,31 @@
-// src/modules/auth/auth.module.ts - CON FUNCIÓN SEPARADA
+// src/auth/auth.module.ts - VERSIÓN FINAL (la que muestras)
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
-import { UsersModule } from '../users/users.module';
-
-// Función factory explícita
-const jwtFactory = {
-  useFactory: async (configService: ConfigService) => {
-    return {
-      secret: configService.get('JWT_SECRET') || 'default_secret_key_here',
-      signOptions: { 
-        expiresIn: configService.get('JWT_EXPIRES_IN') || '1h' 
-      },
-    };
-  },
-  inject: [ConfigService],
-};
+import { Usuario } from '../users/entities/usuario.entity';
 
 @Module({
   imports: [
-    UsersModule,
+    ConfigModule, // ✅ Importa ConfigModule
+    TypeOrmModule.forFeature([Usuario]),
     PassportModule,
-    ConfigModule,
-    JwtModule.registerAsync(jwtFactory),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '24h' },
+      }),
+      inject: [ConfigService],
+    }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    LocalStrategy,
-  ],
-  exports: [
-    AuthService, 
-    JwtModule, 
-    PassportModule
-  ],
+  providers: [AuthService, JwtStrategy, LocalStrategy],
+  exports: [AuthService, JwtModule], // ✅ Exporta tanto AuthService como JwtModule
 })
 export class AuthModule {}

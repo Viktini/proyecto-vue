@@ -1,49 +1,100 @@
 <template>
   <div id="app">
-    <Header v-if="isAuthenticated" />
+    <!-- Mostrar Header solo cuando NO esté en login y esté autenticado -->
+    <Header v-if="!isLoginRoute && isAuthenticated" />
+
     <main class="main">
       <router-view />
     </main>
-    <Footer v-if="isAuthenticated" />
+
+    <!-- Mostrar Footer solo cuando NO esté en login y esté autenticado -->
+    <Footer v-if="!isLoginRoute && isAuthenticated" />
+
+    <!-- Indicador de carga mientras se verifica la sesión -->
+    <div v-if="!sessionVerified && isCheckingSession" class="session-checking">
+      <div class="spinner"></div>
+      <p>Verificando sesión...</p>
+    </div>
   </div>
 </template>
 
-<script>
-import { computed, onMounted } from 'vue'
+<script setup>
+import { onMounted, watch, computed, ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAppStore } from '@/stores/appStore'
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
-import { useI18nComposable } from './composables/useI18n'
-import { useAppStore } from './stores/appStore' // ✅ AGREGAR ESTA IMPORTACIÓN
 
-export default {
-  name: 'App',
-  components: {
-    Header,
-    Footer
-  },
-  setup() {
-    const store = useAppStore() // ✅ AHORA ESTA FUNCIÓN EXISTE
-    const { initLanguage } = useI18nComposable()
+const router = useRouter()
+const route = useRoute()
+const appStore = useAppStore()
 
-    const isAuthenticated = computed(() => store.auth.isAuthenticated)
+// Estado para controlar la verificación de sesión
+const isCheckingSession = ref(false)
+const sessionVerified = ref(false)
 
-    onMounted(() => {
-      store.inicializarDesdeLocalStorage() // ✅ INICIALIZAR STORE DESDE LOCALSTORAGE
-      initLanguage()
+const isAuthenticated = computed(() => appStore.isAuthenticated)
 
-      // Cargar datos iniciales si está autenticado
-      if (isAuthenticated.value) {
-        store.cargarTratamientos()
-        store.cargarAreas()
-        store.cargarPaquetes()
+// ✅ Computed para saber si estamos en la ruta de login
+const isLoginRoute = computed(() => {
+  const path = route.path;
+  return path === '/' || path === '/login';
+})
+
+onMounted(async () => {
+  console.log('🚀 App montada - Verificando sesión...')
+  console.log('🔍 Estado inicial isAuthenticated:', isAuthenticated.value)
+
+  // Solo verificar sesión si no estamos en login
+  if (!isLoginRoute.value) {
+    isCheckingSession.value = true
+
+    try {
+      const sessionValid = await appStore.checkSession()
+      sessionVerified.value = true
+
+      if (!sessionValid && !isLoginRoute.value) {
+        console.log('🔒 No autenticado - Redirigiendo a login')
+        router.push('/login')
       }
-    })
+    } catch (error) {
+      console.error('❌ Error verificando sesión:', error)
+      sessionVerified.value = true
+    } finally {
+      isCheckingSession.value = false
+    }
+  } else {
+    sessionVerified.value = true
+  }
+})
 
-    return {
-      isAuthenticated
+// Watcher para redirigir si pierde autenticación
+watch(isAuthenticated, (newVal, oldVal) => {
+  console.log('🔄 isAuthenticated cambió de', oldVal, 'a', newVal)
+
+  if (!newVal && !isLoginRoute.value) {
+    console.log('🔒 Pérdida de autenticación - Redirigiendo a login')
+    router.push('/login')
+  }
+})
+
+// Watcher para cambios de ruta
+watch(
+  () => route.path,
+  async (newPath) => {
+    console.log('🔄 Ruta cambiada a:', newPath)
+
+    // Si va a una ruta protegida sin estar autenticado, verificar sesión
+    const isProtectedRoute = !newPath.includes('/login') && newPath !== '/'
+    if (isProtectedRoute && !isAuthenticated.value) {
+      console.log('🔍 Verificando sesión desde watch...')
+      const valid = await appStore.checkSession()
+      if (!valid) {
+        router.push('/login')
+      }
     }
   }
-}
+)
 </script>
 
 <style>
@@ -238,6 +289,46 @@ body {
   .btn {
     padding: 0.6rem 1rem;
     font-size: 0.8rem;
+  }
+
+  .session-checking {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #a2d2ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .session-checking p {
+    color: #5a5a5a;
+    font-size: 1rem;
+    font-weight: 500;
   }
 }
 </style>
